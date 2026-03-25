@@ -50,3 +50,10 @@ Plug into aggregators permissionlessly (via standard interface)
 Maintain continuous liquidity (not episodic arbitrage)
 Optimize capital efficiency across regimes
 Avoid TVL dilution via dual-engine allocation
+
+
+Name Ideas:
+AxiomVaults
+Nexus Vaults
+Parallax Vaults
+Parity Vaults
