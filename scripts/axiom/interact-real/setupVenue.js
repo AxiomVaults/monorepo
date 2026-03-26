@@ -31,12 +31,14 @@ async function main() {
     }
   }
 
-  // configureSwap(asset, discountBps, maxSwapSize, maxInventory)
-  const tx = await venue.configureSwap(
+  // setSupportedAsset(asset, supported, discountBps, maxSwapSize, maxInventory, redemptionAdapter)
+  const tx = await venue.setSupportedAsset(
     c.redeemableAsset,
+    true,                              // supported
     20,                                // 0.20% discount
     ethers.parseEther("10000"),        // max single swap: 10,000 ankrFLOW
-    ethers.parseEther("100000")        // max inventory before flush: 100,000 ankrFLOW
+    ethers.parseEther("100000"),       // max inventory before flush: 100,000 ankrFLOW
+    c.ankrRedemptionAdapter            // redemption adapter for flush
   );
   await tx.wait();
   pass("Venue configured: ankrFLOW accepted at 20bps discount");

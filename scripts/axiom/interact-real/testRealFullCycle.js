@@ -74,11 +74,13 @@ async function main() {
   section("2 — CONFIGURE VENUE (ankrFLOW @ 20bps)");
   const cfg = await venue.swapConfigs(c.redeemableAsset);
   if (!cfg.supported) {
-    await (await venue.configureSwap(
+    await (await venue.setSupportedAsset(
       c.redeemableAsset,
+      true,
       20,
       ethers.parseEther("10000"),
-      ethers.parseEther("100000")
+      ethers.parseEther("100000"),
+      c.ankrRedemptionAdapter
     )).wait();
   }
   const cfgNow = await venue.swapConfigs(c.redeemableAsset);
@@ -135,7 +137,7 @@ async function main() {
     await (await ankrFlow.approve(c.venue, ankrObtained)).wait();
 
     try {
-      const swapTx = await venue.swapRedeemableForBase(c.redeemableAsset, ankrObtained, 0);
+      const swapTx = await venue.swapRedeemableForBase(c.redeemableAsset, ankrObtained, 0, signer.address);
       await swapTx.wait();
 
       const wflowPostSwap = await wflow.balanceOf(signer.address);

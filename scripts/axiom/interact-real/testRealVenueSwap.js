@@ -90,7 +90,7 @@ async function main() {
   row("ankrFLOW in",    fb(ankrToSwap),    "ankrFLOW");
   row("expected out",   fb(quote),          "WFLOW (at discount)");
 
-  const swapTx = await venue.swapRedeemableForBase(c.redeemableAsset, ankrToSwap, 0);
+  const swapTx = await venue.swapRedeemableForBase(c.redeemableAsset, ankrToSwap, 0, signer.address);
   const swapRcpt = await swapTx.wait();
   console.log(`  Swap tx: ${swapRcpt.hash}`);
 

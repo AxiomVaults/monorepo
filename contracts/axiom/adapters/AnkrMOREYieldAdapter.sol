@@ -228,23 +228,50 @@ contract AnkrMOREYieldAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
 
     /// @inheritdoc IYieldAdapter
     /// @dev Full unwind: repay all debt then sell all ankrFLOW.
-    ///      Reverts with InsufficientWFLOWBuffer if borrow interest has outgrown the buffer;
-    ///      in that case the operator should call injectWFLOWBuffer before calling withdrawAll.
+    ///      If the WFLOW repayment buffer has been outgrown by accrued interest (normal for
+    ///      variable-rate borrows held over multiple blocks), the adapter withdraws a small
+    ///      slice of ankrFLOW collateral and swaps it to WFLOW to cover the shortfall before
+    ///      repaying. This is self-healing and requires no external top-up for normal operation.
     function withdrawAll() external override nonReentrant returns (uint256 total) {
         (uint256 ankrInMORE, uint256 wflowDebt) = _getMorePosition();
         uint256 wflowBuf = IERC20(address(wflow)).balanceOf(address(this));
 
-        // ── Repay all WFLOW debt using the in-contract buffer ─────────────────
-        if (wflowDebt > 0) {
+        // ── Cover any interest shortfall by partially withdrawing collateral ──
+        // Variable-rate debt grows each block. If the buffer is insufficient to
+        // repay the full outstanding debt, withdraw a small amount of ankrFLOW,
+        // convert it to WFLOW, and use it to top up the buffer.
+        if (wflowDebt > wflowBuf) {
+            uint256 shortfall = wflowDebt - wflowBuf;
+            // Add 0.5% margin to cover swap slippage and further accrual.
+            uint256 wflowNeeded = shortfall + shortfall / 200;
+            // Withdraw a proportional slice of ankrFLOW from MORE.
+            // ankrNeeded ≈ wflowNeeded / (WFLOW per ankrFLOW price).
+            // Over-estimate by fetching the PunchSwap quote and withdrawing
+            // 1% more than the quoted optimal to absorb slippage.
+            uint256 ankrNeeded = _quoteAnkrForWFLOW(wflowNeeded);
+            uint256 ankrToWithdraw = ankrNeeded + ankrNeeded / 100; // +1%
+            if (ankrToWithdraw > ankrInMORE) ankrToWithdraw = ankrInMORE;
+            morePool.withdraw(address(ankrFlow), ankrToWithdraw, address(this));
+            uint256 ankrOut = ankrFlow.balanceOf(address(this));
+            _swapAllAnkrFlowToWFLOW(ankrOut);
+            wflowBuf = IERC20(address(wflow)).balanceOf(address(this));
+            // Refresh position after partial withdrawal
+            (ankrInMORE, wflowDebt) = _getMorePosition();
+            // If still short (e.g. extreme slippage), revert so operator can act.
             if (wflowBuf < wflowDebt) {
                 revert InsufficientWFLOWBuffer(wflowDebt, wflowBuf);
             }
-            IERC20(address(wflow)).forceApprove(address(morePool), wflowDebt);
+        }
+
+        // ── Repay all WFLOW debt ───────────────────────────────────────────────
+        if (wflowDebt > 0) {
+            // Approve max so MORE pulls exactly the outstanding debt.
+            IERC20(address(wflow)).forceApprove(address(morePool), type(uint256).max);
             morePool.repay(address(wflow), type(uint256).max, 2, address(this));
             IERC20(address(wflow)).forceApprove(address(morePool), 0);
         }
 
-        // ── Withdraw ALL ankrFLOW from MORE ───────────────────────────────────
+        // ── Withdraw ALL remaining ankrFLOW from MORE ─────────────────────────
         if (ankrInMORE > 0) {
             morePool.withdraw(address(ankrFlow), type(uint256).max, address(this));
         }
@@ -388,6 +415,19 @@ contract AnkrMOREYieldAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
             block.timestamp + SWAP_DEADLINE
         );
         IERC20(address(ankrFlow)).forceApprove(address(swapRouter), 0);
+    }
+
+    /// @dev Quote how many ankrFLOW are needed to receive at least `wflowOut` WFLOW.
+    ///      Uses PunchSwap getAmountsIn. Falls back to 1:1 if the call reverts.
+    function _quoteAnkrForWFLOW(uint256 wflowOut) internal view returns (uint256) {
+        address[] memory path = new address[](2);
+        path[0] = address(ankrFlow);
+        path[1] = address(wflow);
+        try swapRouter.getAmountsIn(wflowOut, path) returns (uint256[] memory amounts) {
+            return amounts[0];
+        } catch {
+            return wflowOut; // 1:1 fallback (over-estimates ankrFLOW needed → safer)
+        }
     }
 
     // ─── Events ──────────────────────────────────────────────────────────────

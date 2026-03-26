@@ -62,14 +62,31 @@ const ANKR_REDEMPTION_ADAPTER_ABI = [
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
 
-function loadDeployed() {
-  const p = path.join(__dirname, "..", "deployed-real.json");
-  if (!fs.existsSync(p)) throw new Error(`deployed-real.json not found at ${p}. Run deployReal.js first.`);
-  return JSON.parse(fs.readFileSync(p, "utf8"));
+function loadDeployed(chainId) {
+  const base = path.join(__dirname, "..");
+  // flowFork (hardhat chain 999) → deployed-fork.json
+  // flowTestnet (545) → deployed-real.json
+  // anything else → try fork, then real
+  const forkPath = path.join(base, "deployed-fork.json");
+  const realPath = path.join(base, "deployed-real.json");
+
+  if (chainId === 999n || chainId === 999) {
+    if (!fs.existsSync(forkPath)) throw new Error("deployed-fork.json not found. Run deployFork.js first.");
+    return JSON.parse(fs.readFileSync(forkPath, "utf8"));
+  }
+  if (chainId === 545n || chainId === 545) {
+    if (!fs.existsSync(realPath)) throw new Error("deployed-real.json not found. Run deployReal.js first.");
+    return JSON.parse(fs.readFileSync(realPath, "utf8"));
+  }
+  // fallback
+  if (fs.existsSync(forkPath)) return JSON.parse(fs.readFileSync(forkPath, "utf8"));
+  if (fs.existsSync(realPath)) return JSON.parse(fs.readFileSync(realPath, "utf8"));
+  throw new Error("No deployment JSON found. Run deployFork.js or deployReal.js first.");
 }
 
 async function loadContracts() {
-  const d = loadDeployed();
+  const network = await ethers.provider.getNetwork();
+  const d = loadDeployed(network.chainId);
   const c = d.contracts;
   const rt = d.realTokens;
 

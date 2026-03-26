@@ -1,0 +1,47 @@
+{
+  "network": "flowFork",
+  "chainId": "999",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "timestamp": "2026-03-26T21:09:33.345Z",
+  "realTokens": {
+    "WFLOW": "0xd3bF53DAC106A0290B0483EcBC89d40FcC961f3e",
+    "ankrFLOW": "0x1b97100eA1D7126C4d60027e231EA4CB25314bdb",
+    "ankrStaking": "0xFE8189A3016cb6A3668b8ccdAC520CE572D4287a",
+    "morePool": "0xbC92aaC2DBBF42215248B5688eB3D3d2b32F2c8d",
+    "moreDataProv": "0x79e71e3c0EDF2B88b0aB38E9A1eF0F6a230e56bf",
+    "punchSwap": "0xf45AFe28fd5519d5f8C1d4787a4D5f724C0eFa4d",
+    "stgUSDC": "0xF1815bd50389c46847f0Bda824eC8da914045D14"
+  },
+  "contracts": {
+    "baseAsset": "0xd3bF53DAC106A0290B0483EcBC89d40FcC961f3e",
+    "redeemableAsset": "0x1b97100eA1D7126C4d60027e231EA4CB25314bdb",
+    "vault": "0x1291Be112d480055DaFd8a610b7d1e203891C274",
+    "strategyManager": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+    "ankrYieldAdapter": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    "ankrMOREYieldAdapter": "0xCD8a1C3ba11CF5ECfa6267617243239504a98d90",
+    "ankrRedemptionAdapter": "0x82e01223d51Eb87e16A03E24687EDF0F294da6f1",
+    "venue": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
+    "axiomFactory": "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0",
+    "pair": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650"
+  },
+  "config": {
+    "vault": {
+      "name": "Axiom Vault WFLOW",
+      "symbol": "axWFLOW"
+    },
+    "ankrYieldAdapter": {
+      "maxSlippageBps": 100
+    },
+    "ankrMOREYieldAdapter": {
+      "borrowFractionBps": 6000,
+      "maxSlippageBps": 100
+    },
+    "ankrRedemptionAdapter": {
+      "claimDelay": 120,
+      "maxSlippageBps": 100
+    },
+    "pair": {
+      "discountBps": 20
+    }
+  }
+}
