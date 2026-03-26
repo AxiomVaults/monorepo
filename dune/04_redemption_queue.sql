@@ -19,7 +19,7 @@ WITH requests AS (
     '0x' || right(cast(topic2 AS varchar), 40)                   AS requester,
     -- data = abi.encode(amount, timestamp)
     bytearray_to_uint256(substr(data,  1, 32))                   AS amount_raw
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xc96304e3c037f81da488ed9dea1d8f2a48278a75
     AND topic0 = 0x73baede4549b15bc5bd693c38a8e083221a7764658b58d982510f094d44dd999
 ),
@@ -33,7 +33,7 @@ claims AS (
     '0x' || right(cast(topic2 AS varchar), 40)                   AS recipient,
     -- data = abi.encode(baseAmount)
     bytearray_to_uint256(substr(data,  1, 32))                   AS base_amount_raw
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xc96304e3c037f81da488ed9dea1d8f2a48278a75
     AND topic0 = 0xa15008b6e695cc35d35421608ccb0ed390dab78c54707b1be30293cb76296c81
 ),

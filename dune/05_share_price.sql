@@ -19,7 +19,7 @@ WITH share_events AS (
     'deposit'                                              AS event_type,
     bytearray_to_uint256(substr(data,  1, 32))             AS assets_raw,
     bytearray_to_uint256(substr(data, 33, 32))             AS shares_raw
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xcace1b78160ae76398f486c8a18044da0d66d86d
     AND topic0 = 0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7
 
@@ -33,7 +33,7 @@ WITH share_events AS (
     'withdraw'                                             AS event_type,
     bytearray_to_uint256(substr(data,  1, 32))             AS assets_raw,
     bytearray_to_uint256(substr(data, 33, 32))             AS shares_raw
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xcace1b78160ae76398f486c8a18044da0d66d86d
     AND topic0 = 0xfbde797d201c681b91056529119e0b02407c7bb96a4a2c75c01fc9667232c8db
 ),

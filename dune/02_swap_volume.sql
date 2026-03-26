@@ -21,7 +21,7 @@ WITH swap_events AS (
     bytearray_to_uint256(substr(data,  1, 32)) AS amount_in_raw,
     bytearray_to_uint256(substr(data, 33, 32)) AS amount_out_raw,
     bytearray_to_uint256(substr(data, 65, 32)) AS discount_bps_raw
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0x34b40ba116d5dec75548a9e9a8f15411461e8c70
     AND topic0 = 0x28c738dbec11a1bed94ba127a3712d54bcd39cf4ae95b6ebd671aaf10fd0287b
 ),

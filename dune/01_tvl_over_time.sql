@@ -7,7 +7,7 @@
 --   Withdraw(address indexed caller, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
 --
 -- Vault: 0xcace1b78160ae76398f486c8a18044da0d66d86d
--- Chain: Flow EVM (747) — use flow_evm.logs  (or evm.logs WHERE blockchain = 'flow')
+-- Chain: Flow EVM (747) — Dune schema: flow.logs / flow.transactions
 
 WITH raw_events AS (
   SELECT
@@ -22,7 +22,7 @@ WITH raw_events AS (
     END AS event_type,
     -- assets = first 32 bytes of non-indexed data (same position for both events)
     bytearray_to_uint256(substr(data, 1, 32)) AS assets_raw
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xcace1b78160ae76398f486c8a18044da0d66d86d
     AND topic0 IN (
       0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7,  -- Deposit

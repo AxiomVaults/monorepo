@@ -19,7 +19,7 @@ WITH alloc_events AS (
     bytearray_to_uint256(substr(data,  1, 32)) AS amount_raw,
     bytearray_to_uint256(substr(data, 33, 32)) AS total_deployed_raw,
     'allocate'                                  AS action
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xd5ac451b0c50b9476107823af206ed814a2e2580
     AND topic0 = 0xd7068ffc5712961c5b574c5848a5d5aa84d81b2e67ee6a1b8f5ba6b7377bcc71
 
@@ -32,7 +32,7 @@ WITH alloc_events AS (
     bytearray_to_uint256(substr(data,  1, 32)) AS amount_raw,
     bytearray_to_uint256(substr(data, 33, 32)) AS total_deployed_raw,
     'deallocate'                                AS action
-  FROM flow_evm.logs
+  FROM flow.logs
   WHERE contract_address = 0xd5ac451b0c50b9476107823af206ed814a2e2580
     AND topic0 = 0xfe68061eae052626a73a04629725f82f021d874047f9379085ba9236a325aa08
 ),

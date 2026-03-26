@@ -27,7 +27,7 @@ SELECT
     WHEN bytearray_to_uint256(substr(data, 33, 32)) > 0 THEN 'ankrFLOW→WFLOW'
     ELSE 'WFLOW→ankrFLOW'
   END AS direction
-FROM flow_evm.logs
+FROM flow.logs
 WHERE contract_address = 0x07882ae1ecb7429a84f1d53048d35c4bb2056877
   AND topic0 = 0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822
 ORDER BY block_number DESC
@@ -40,7 +40,7 @@ SELECT
   COUNT(DISTINCT '0x' || right(cast(topic1 AS varchar), 40))                 AS unique_senders,
   SUM(bytearray_to_uint256(substr(data, 33, 32))) / 1e18                     AS total_ankrflow_in,
   SUM(bytearray_to_uint256(substr(data, 65, 32))) / 1e18                     AS total_wflow_out
-FROM flow_evm.logs
+FROM flow.logs
 WHERE contract_address = 0x07882ae1ecb7429a84f1d53048d35c4bb2056877
   AND topic0 = 0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822
 GROUP BY 1
@@ -56,7 +56,7 @@ SELECT
   "from"                                      AS caller,
   length(data)                                AS calldata_bytes,
   substr(cast(data AS varchar), 1, 10)        AS selector
-FROM flow_evm.transactions
+FROM flow.transactions
 WHERE to = 0x07882ae1ecb7429a84f1d53048d35c4bb2056877
   AND substr(cast(data AS varchar), 1, 10) = '0x022c0d9f'
 ORDER BY block_time DESC
