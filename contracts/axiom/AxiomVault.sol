@@ -194,6 +194,23 @@ contract AxiomVault is ERC4626, AccessControl, Pausable, ReentrancyGuard, IAxiom
         emit AuthorizedTransfer(to, amount);
     }
 
+    /// @notice Deploy capital to the strategy manager (e.g. for yield allocation).
+    /// @dev STRATEGY_MANAGER_ROLE only. Identical liquidity check as authorizedTransfer.
+    function deployCapital(address to, uint256 amount)
+        external
+        onlyRole(STRATEGY_MANAGER_ROLE)
+        nonReentrant
+    {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+        uint256 onHand = IERC20(asset()).balanceOf(address(this));
+        uint256 reserveRequired = (onHand * reserveBufferBps) / BPS_DENOMINATOR;
+        uint256 available = onHand > reserveRequired ? onHand - reserveRequired : 0;
+        if (amount > available) revert InsufficientLiquidity(amount, available);
+        IERC20(asset()).safeTransfer(to, amount);
+        emit AuthorizedTransfer(to, amount);
+    }
+
     /// @inheritdoc IAxiomVault
     function receiveRedemptionProceeds(uint256 amount)
         external

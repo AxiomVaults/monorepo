@@ -58,7 +58,7 @@ async function main() {
 
   // ─── 1. Mock base asset ────────────────────────────────────────────────────
   console.log("» Deploying MockERC20 (FUSD base asset)...");
-  const MockERC20Factory = await ethers.getContractFactory("MockERC20");
+  const MockERC20Factory = await ethers.getContractFactory("contracts/axiom/mocks/MockERC20.sol:MockERC20");
   const baseAsset = await MockERC20Factory.deploy(
     CONFIG.baseAsset.name,
     CONFIG.baseAsset.symbol,
@@ -70,7 +70,7 @@ async function main() {
 
   // ─── 2. Mock redeemable asset ─────────────────────────────────────────────
   console.log("\n» Deploying MockRedeemableAsset (stFLOW)...");
-  const MockRedeemableFactory = await ethers.getContractFactory("MockRedeemableAsset");
+  const MockRedeemableFactory = await ethers.getContractFactory("contracts/axiom/mocks/MockRedeemableAsset.sol:MockRedeemableAsset");
   const redeemableAsset = await MockRedeemableFactory.deploy(
     CONFIG.redeemableAsset.name,
     CONFIG.redeemableAsset.symbol,
@@ -102,7 +102,7 @@ async function main() {
 
   // ─── 5. MockYieldAdapter ─────────────────────────────────────────────────
   console.log("\n» Deploying MockYieldAdapter (5% APR)...");
-  const YieldAdapterFactory = await ethers.getContractFactory("MockYieldAdapter");
+  const YieldAdapterFactory = await ethers.getContractFactory("contracts/axiom/mocks/MockYieldAdapter.sol:MockYieldAdapter");
   const yieldAdapter = await YieldAdapterFactory.deploy(
     deployed.baseAsset,
     CONFIG.yieldAdapter.aprBps
@@ -113,7 +113,7 @@ async function main() {
 
   // ─── 6. MockRedemptionAdapter ─────────────────────────────────────────────
   console.log("\n» Deploying MockRedemptionAdapter (300s delay)...");
-  const RedemptionAdapterFactory = await ethers.getContractFactory("MockRedemptionAdapter");
+  const RedemptionAdapterFactory = await ethers.getContractFactory("contracts/axiom/mocks/MockRedemptionAdapter.sol:MockRedemptionAdapter");
   const redemptionAdapter = await RedemptionAdapterFactory.deploy(
     deployed.redeemableAsset,
     deployed.baseAsset,

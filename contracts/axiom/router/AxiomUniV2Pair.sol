@@ -152,7 +152,7 @@ contract AxiomUniV2Pair is ReentrancyGuard {
     ///         We therefore recommend routing through swapExactTokensForTokens on AxiomVenue
     ///         directly for exact pricing; getReserves is primarily for price discovery / sorting.
     function getReserves()
-        external
+        public
         view
         returns (
             uint112 reserve0,
@@ -179,13 +179,14 @@ contract AxiomUniV2Pair is ReentrancyGuard {
     /// @notice UniV2-compatible swap entry point.
     ///
     ///         IMPORTANT: Only the token1→token0 direction is supported (sell rToken, receive base).
-    ///         Set amount0Out > 0 and amount1Out == 0.
     ///
-    ///         Caller must transfer token1 (rToken) to this contract BEFORE calling swap,
-    ///         following the UniV2 pattern. This contract measures the delta and routes to venue.
+    /// @notice Execute a one-way swap: sell token1 (rToken) to receive token0 (base).
+    ///         The caller must transfer token1 to this pair BEFORE calling swap(),
+    ///         following the UniV2 pay-first pattern. This contract measures the delta
+    ///         and delegates to AxiomVenue.
     ///
     /// @param amount0Out Amount of token0 (base) the caller expects to receive
-    /// @param amount1Out Must be 0 — reverse direction not supported
+    /// @param amount1Out Must be 0 -- reverse direction not supported
     /// @param to         Recipient of token0
     /// @param data       Must be empty (no flash loan support in v1)
     function swap(
@@ -199,56 +200,31 @@ contract AxiomUniV2Pair is ReentrancyGuard {
         if (to == address(0)) revert ZeroAddress();
         if (data.length != 0) revert InvalidSwapDirection(); // no flash loan in v1
 
-        // Measure how much token1 was transferred in (UniV2 pay-first pattern)
+        // Measure how much token1 (rToken) was pre-sent by the caller (UniV2 pay-first)
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
         if (balance1 == 0) revert InsufficientInputAmount();
 
-        // Check that quote covers expected output (slippage guard)
+        // Slippage guard: quoted output must meet the caller's minimum
         uint256 quoted = venue.getQuote(token1, balance1);
         if (quoted < amount0Out) revert InsufficientLiquidity();
 
-        // Transfer rToken to venue for processing (venue pulls from us)
-        IERC20(token1).safeTransfer(address(venue), balance1);
+        // Approve venue to pull balance1 token1 from this pair, then call the swap.
+        // This pair is msg.sender to venue; venue will safeTransferFrom(address(this), ...).
+        // Zero-then-set pattern for ERC20 approve safety.
+        IERC20(token1).safeApprove(address(venue), 0);
+        IERC20(token1).safeApprove(address(venue), balance1);
 
-        // Approve and call venue swap — venue pulls token from msg.sender normally,
-        // but here we've already sent it. We call a venue helper that accepts pre-sent tokens.
-        // IMPLEMENTATION: Call swapRedeemableForBase via a pre-approved path.
-        // Since venue.swapRedeemableForBase pulls from msg.sender, we temporarily approve
-        // the venue to spend from this pair after pre-approving.
-        // Alternative: venue.swapFromPair() — add to venue if direct UniV2 routing needed.
-        //
-        // For v1 we use the safeApprove path: transfer to self was already done above.
-        // We re-approve from venue's perspective since we already sent the tokens.
-        // The cleanest flow: pair transfers token1 directly to venue storage, then notifies.
-        //
-        // Actually, since we transferred token1 to venue directly above, and venue's
-        // swapRedeemableForBase wants to safeTransferFrom(msg.sender), we need to call
-        // swapRedeemableForBase from the pair where pair IS the msg.sender.
-        // So: pair approves venue to pull from pair, then pair calls swap on venue.
-        //
-        // We revoke the previous safeTransfer and instead approve+call:
-        // (The safeTransfer above is incorrect for this pattern — see corrected flow below)
+        // Venue pulls token1 from this pair and sends base asset to `to`
+        uint256 amountOut = venue.swapRedeemableForBase(token1, balance1, amount0Out, to);
 
-        // CORRECTED FLOW (UniV2 pattern):
-        // 1. Token1 already sits in this pair (transferred by router/user before swap())
-        // 2. This pair approves venue to pull token1 from the pair
-        // 3. This pair calls venue.swapRedeemableForBase(token1, balance1, amount0Out, to)
-        //    — venue pulls token1 from pair (this contract), pays `to` in base asset
-        //
-        // NOTE: We need to undo the safeTransfer above. Since solidity is sequential,
-        // we restructure — pull back is not possible. So we restructure the logic:
-        // Transfer to venue is correct IF venue can accept tokens via a pair-facing entry.
-        // For now, we call venue.swapRedeemableForBase where msg.sender = this pair.
-        // That means venue will pull token1 from this pair contract.
-        // But we already sent them to venue in the line above — which means venue already
-        // has the tokens and the pull will double-pull.
-        //
-        // FINAL CORRECT APPROACH: Do NOT pre-transfer. Just approve + call.
-        // The safeTransfer above must be removed. See implementation note in constructor comments.
+        // Zero out residual approval
+        IERC20(token1).safeApprove(address(venue), 0);
 
-        // This implementation is handled correctly below. The safeTransfer above is part of
-        // the design discussion captured in comments — the actual execution path is:
-        revert InvalidSwapDirection(); // placeholder: see _swap() below
+        emit Swap(msg.sender, 0, balance1, amountOut, 0, to);
+
+        // Emit Sync with updated virtual reserves
+        (uint112 r0, uint112 r1,) = getReserves();
+        emit Sync(r0, r1);
     }
 
     // ─── IUniswapV2Pair: LP stubs (not supported) ─────────────────────────────

@@ -83,9 +83,9 @@ async function main() {
   const vault             = await ethers.getContractAt("AxiomVault",             c.vault);
   const strategyManager   = await ethers.getContractAt("StrategyManager",        c.strategyManager);
   const venue             = await ethers.getContractAt("AxiomVenue",             c.venue);
-  const baseAsset         = await ethers.getContractAt("MockERC20",              c.baseAsset);
-  const redeemableAsset   = await ethers.getContractAt("MockRedeemableAsset",    c.redeemableAsset);
-  const redemptionAdapter = await ethers.getContractAt("MockRedemptionAdapter",  c.redemptionAdapter);
+  const baseAsset         = await ethers.getContractAt("contracts/axiom/mocks/MockERC20.sol:MockERC20",              c.baseAsset);
+  const redeemableAsset   = await ethers.getContractAt("contracts/axiom/mocks/MockRedeemableAsset.sol:MockRedeemableAsset",    c.redeemableAsset);
+  const redemptionAdapter = await ethers.getContractAt("contracts/axiom/mocks/MockRedemptionAdapter.sol:MockRedemptionAdapter",  c.redemptionAdapter);
 
   // ─── Role constants ───────────────────────────────────────────────────────
   const STRATEGY_MANAGER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("STRATEGY_MANAGER_ROLE"));

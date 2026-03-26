@@ -1,0 +1,43 @@
+{
+  "network": "flowTestnet",
+  "chainId": "545",
+  "deployer": "0xa341b0F69359482862Ed4422c6057cd59560D9E4",
+  "timestamp": "2026-03-25T21:31:29.011Z",
+  "contracts": {
+    "baseAsset": "0x7eC511382F5E3062d6f7d7634C8f213Bc19C7F13",
+    "redeemableAsset": "0xa06c98511b81CB7b3d174e74690E12838F0541c4",
+    "vault": "0x68Ea04A6F1A550Fdaf5a3a77864935a4F48528F7",
+    "strategyManager": "0xc38A65200127F8e515BAe5F431a7Da28b5Cca16f",
+    "yieldAdapter": "0x52e5fD054eD379bb3e0659d775431E542C931A0D",
+    "redemptionAdapter": "0x58F09F77353BFeE53D42Af957FeaF5308BE1ED47",
+    "venue": "0xe27Ab75E1f55c557f787D1dd4C09E84B4CEB1d01",
+    "axiomFactory": "0x847B2AdaB00a9738edFF9DeD608e46Ac583c8689",
+    "pair": "0x93AF0FC3E12A87B1c4e72e3DC289a0b93c26364A",
+    "oldPair": "0x93AF0FC3E12A87B1c4e72e3DC289a0b93c26364A"
+  },
+  "config": {
+    "baseAsset": {
+      "name": "Flow USD",
+      "symbol": "FUSD",
+      "decimals": 18
+    },
+    "redeemableAsset": {
+      "name": "Staked FLOW",
+      "symbol": "stFLOW",
+      "decimals": 18
+    },
+    "vault": {
+      "name": "Axiom Vault FUSD",
+      "symbol": "axFUSD"
+    },
+    "yieldAdapter": {
+      "aprBps": 500
+    },
+    "redemptionAdapter": {
+      "claimDelay": 300
+    },
+    "pair": {
+      "discountBps": 20
+    }
+  }
+}
