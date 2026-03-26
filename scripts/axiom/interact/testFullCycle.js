@@ -67,10 +67,11 @@ async function main() {
   row("quote (2000 stFLOW)", fb(quote),  "FUSD");
   tx = await redeemableAsset.approve(c.venue, SWAP_STFLOW);
   await tx.wait();
+  const fusdBeforeSwap = await baseAsset.balanceOf(signer.address);
   const swapTx = await venue.swapRedeemableForBase(c.redeemableAsset, SWAP_STFLOW, minOut, signer.address);
   await swapTx.wait();
   console.log(`  Swapped    tx: ${swapTx.hash}`);
-  const fusdFromSwap    = (await baseAsset.balanceOf(signer.address)) - baseFusd - DEPOSIT_FUSD + DEPOSIT_FUSD;
+  const fusdFromSwap = (await baseAsset.balanceOf(signer.address)) - fusdBeforeSwap;
   const reqId           = (await redemptionAdapter.nextRequestId()) - 1n;
   const req             = await redemptionAdapter.requests(reqId);
   const claimDelay      = await redemptionAdapter.claimDelay();
@@ -209,7 +210,7 @@ function quoteWasValid(quote) {
   // A valid quote should be just below the swap amount (20bps discount)
   const q = Number(ethers.formatEther(quote));
   const swapFusdEquiv = Number(ethers.formatEther(SWAP_STFLOW)); // 1:1 par
-  return q > swapFusdEquiv * 0.998 && q <= swapFusdEquiv;
+  return q >= swapFusdEquiv * 0.998 && q <= swapFusdEquiv;
 }
 
 function divider() { console.log("  " + "─".repeat(52)); }
