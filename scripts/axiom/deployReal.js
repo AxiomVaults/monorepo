@@ -78,94 +78,32 @@ async function main() {
 
   const d = {}; // deployed addresses
 
-  // ─── 1. AxiomVault (baseAsset = WFLOW) ───────────────────────────────────
-  console.log("» Deploying AxiomVault (base=WFLOW)...");
-  const Vault = await ethers.getContractFactory("AxiomVault");
-  const vault = await deploy(Vault, REAL.WFLOW, CONFIG.vault.name, CONFIG.vault.symbol);
-  d.vault = await vault.getAddress();
-  log("AxiomVault:", d.vault);
-
-  // ─── 2. StrategyManager ───────────────────────────────────────────────────
-  console.log("\n» Deploying StrategyManager...");
-  const Manager = await ethers.getContractFactory("StrategyManager");
-  const strategyManager = await deploy(Manager, d.vault, REAL.WFLOW);
-  d.strategyManager = await strategyManager.getAddress();
-  log("StrategyManager:", d.strategyManager);
-
-  // ─── 3. AnkrYieldAdapter (pure staking, no leverage) ─────────────────────
-  console.log("\n» Deploying AnkrYieldAdapter (pure Ankr staking)...");
-  const AnkrYield = await ethers.getContractFactory(
-    "contracts/axiom/adapters/AnkrYieldAdapter.sol:AnkrYieldAdapter"
-  );
-  const ankrYieldAdapter = await deploy(
-    AnkrYield,
-    REAL.WFLOW,
-    REAL.ANKR_FLOW,
-    REAL.ANKR_STAKING,
-    REAL.PUNCHSWAP_ROUTER,
-    CONFIG.ankrYieldAdapter.maxSlippageBps
-  );
-  d.ankrYieldAdapter = await ankrYieldAdapter.getAddress();
-  log("AnkrYieldAdapter:", d.ankrYieldAdapter);
-
-  // ─── 4. AnkrMOREYieldAdapter (1-loop leveraged) ───────────────────────────
-  console.log("\n» Deploying AnkrMOREYieldAdapter (1-loop Ankr+MORE)...");
-  const AnkrMOREYield = await ethers.getContractFactory(
-    "contracts/axiom/adapters/AnkrMOREYieldAdapter.sol:AnkrMOREYieldAdapter"
-  );
-  const ankrMOREYieldAdapter = await deploy(
-    AnkrMOREYield,
-    REAL.WFLOW,
-    REAL.ANKR_FLOW,
-    REAL.ANKR_STAKING,
-    REAL.MORE_POOL,
-    REAL.MORE_DATA_PROV,
-    REAL.PUNCHSWAP_ROUTER,
-    REAL.STG_USDC,
-    CONFIG.ankrMOREYieldAdapter.borrowFractionBps,
-    CONFIG.ankrMOREYieldAdapter.maxSlippageBps
-  );
-  d.ankrMOREYieldAdapter = await ankrMOREYieldAdapter.getAddress();
-  log("AnkrMOREYieldAdapter:", d.ankrMOREYieldAdapter);
-
-  // ─── 5. AnkrRedemptionAdapter ─────────────────────────────────────────────
-  console.log("\n» Deploying AnkrRedemptionAdapter (PunchSwap swap + 1h delay)...");
-  const AnkrRedemption = await ethers.getContractFactory(
-    "contracts/axiom/adapters/AnkrRedemptionAdapter.sol:AnkrRedemptionAdapter"
-  );
-  const ankrRedemptionAdapter = await deploy(
-    AnkrRedemption,
-    REAL.ANKR_FLOW,
-    REAL.WFLOW,
-    REAL.PUNCHSWAP_ROUTER,
-    CONFIG.ankrRedemptionAdapter.claimDelay,
-    CONFIG.ankrRedemptionAdapter.maxSlippageBps
-  );
-  d.ankrRedemptionAdapter = await ankrRedemptionAdapter.getAddress();
+  // Addresses already deployed in the first run (reuse to save gas)
+  d.vault                = "0x1cE43d3E45303569BafaBA4C4DdEF9baf1D7a73f";
+  d.strategyManager      = "0x57ed94DA86c49672c715F3e85c082A0dCee04C2d";
+  d.ankrYieldAdapter     = "0x5bB2D3fe59bE0A68243d4fc8f8DD87205DeA3B18";
+  d.ankrMOREYieldAdapter = "0xc78a634705663425Ed3897D655a0e2c56847aE9f";
+  d.ankrRedemptionAdapter= "0x0d7Bc897aA0DD00d7C0Daed446e3A7f56d8ef8cf";
+  d.venue                = "0xa1A38Caff9CfA5Bf4c54ce3C4d2A60bD5476802B";
+  d.axiomFactory         = "0x9188Fd6262C8a8cd7561dE56d7C97714E1EcA89A";
+  console.log("» Reusing already-deployed contracts (7/9 addresses from first run)");
+  log("AxiomVault:",            d.vault);
+  log("StrategyManager:",       d.strategyManager);
+  log("AnkrYieldAdapter:",      d.ankrYieldAdapter);
+  log("AnkrMOREYieldAdapter:",  d.ankrMOREYieldAdapter);
   log("AnkrRedemptionAdapter:", d.ankrRedemptionAdapter);
-
-  // ─── 6. AxiomVenue ────────────────────────────────────────────────────────
-  console.log("\n» Deploying AxiomVenue...");
-  const Venue = await ethers.getContractFactory("AxiomVenue");
-  const venue = await deploy(Venue, d.vault, d.strategyManager);
-  d.venue = await venue.getAddress();
-  log("AxiomVenue:", d.venue);
-
-  // ─── 7. AxiomFactory + Pair ───────────────────────────────────────────────
-  console.log("\n» Deploying AxiomFactory...");
-  const Factory = await ethers.getContractFactory("AxiomFactory");
-  const axiomFactory = await deploy(Factory);
-  d.axiomFactory = await axiomFactory.getAddress();
-  log("AxiomFactory:", d.axiomFactory);
+  log("AxiomVenue:",            d.venue);
+  log("AxiomFactory:",          d.axiomFactory);
 
   console.log("\n» Deploying AxiomUniV2Pair (WFLOW / ankrFLOW)...");
   const Pair = await ethers.getContractFactory("AxiomUniV2Pair");
   const pair = await deploy(
     Pair,
-    d.vault,
-    d.venue,
-    REAL.WFLOW,
-    REAL.ANKR_FLOW,
+    d.axiomFactory,   // factory_
+    REAL.WFLOW,       // token0_  (base)
+    REAL.ANKR_FLOW,   // token1_  (redeemable)
+    d.venue,          // venue_
+    d.vault,          // vault_
     CONFIG.pair.discountBps
   );
   d.pair = await pair.getAddress();
@@ -174,6 +112,11 @@ async function main() {
   // ─── 8. Configure: wire everything together ───────────────────────────────
 
   console.log("\n\n=== Configuring contracts ===\n");
+
+  // Attach contract instances for config calls
+  const vault           = await ethers.getContractAt("AxiomVault",      d.vault,          deployer);
+  const strategyManager = await ethers.getContractAt("StrategyManager", d.strategyManager, deployer);
+  const axiomFactory    = await ethers.getContractAt("AxiomFactory",    d.axiomFactory,    deployer);
 
   // 8a. Vault: grant STRATEGY_MANAGER_ROLE to StrategyManager
   const STRATEGY_MANAGER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("STRATEGY_MANAGER_ROLE"));
@@ -186,7 +129,6 @@ async function main() {
   await (await vault.grantRole(VENUE_ROLE, d.strategyManager)).wait();
 
   // 8b. StrategyManager: set AnkrMOREYieldAdapter as the active yield adapter
-  //     (AnkrYieldAdapter is deployed as a simpler alternative — swap in via setYieldAdapter if needed)
   console.log("» StrategyManager: set AnkrMOREYieldAdapter (active yield strategy)");
   await (await strategyManager.setYieldAdapter(d.ankrMOREYieldAdapter)).wait();
 
@@ -198,7 +140,7 @@ async function main() {
   console.log("» StrategyManager: grant VENUE_ROLE → AxiomVenue");
   await (await strategyManager.grantRole(VENUE_ROLE_SM, d.venue)).wait();
 
-  // 8d. AxiomVenue: set pair on factory and register it
+  // 8d. AxiomFactory: register pair
   console.log("» AxiomFactory: register pair (WFLOW/ankrFLOW)");
   await (await axiomFactory.registerPair(REAL.WFLOW, REAL.ANKR_FLOW, d.pair)).wait();
 
