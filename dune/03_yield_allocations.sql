@@ -1,24 +1,27 @@
 -- 03_yield_allocations.sql
 -- Capital allocation lifecycle: when capital moves in/out of yield strategies
 --
--- StrategyManager events (replace <STRATEGY_MANAGER_ADDRESS>):
---   AllocatedToYield(address indexed adapter, uint256 amount)
---   DeallocatedFromYield(address indexed adapter, uint256 amount)
---   topic0s: keccak256 of each signature
+-- StrategyManager events (no indexed params — filter by contract address only):
+--   AllocatedToYield(uint256 amount, uint256 totalDeployed)
+--   topic0 = 0xd7068ffc5712961c5b574c5848a5d5aa84d81b2e67ee6a1b8f5ba6b7377bcc71
 --
--- This shows capital efficiency — how much of TVL is working in yield vs idle.
+--   DeallocatedFromYield(uint256 amount, uint256 totalDeployed)
+--   topic0 = 0xfe68061eae052626a73a04629725f82f021d874047f9379085ba9236a325aa08
+--
+-- StrategyManager: 0xd5ac451b0c50b9476107823af206ed814a2e2580
 
 WITH alloc_events AS (
   SELECT
     block_time,
     block_number,
     tx_hash,
-    '0x' || right(cast(topic1 AS varchar), 40) AS adapter,
-    bytearray_to_uint256(substr(data, 1, 32))  AS amount_raw,
+    -- data = abi.encode(amount, totalDeployed)
+    bytearray_to_uint256(substr(data,  1, 32)) AS amount_raw,
+    bytearray_to_uint256(substr(data, 33, 32)) AS total_deployed_raw,
     'allocate'                                  AS action
   FROM flow_evm.logs
-  WHERE contract_address = lower('<STRATEGY_MANAGER_ADDRESS>')
-    AND topic0 = 0x<ALLOCATED_TO_YIELD_TOPIC0>
+  WHERE contract_address = 0xd5ac451b0c50b9476107823af206ed814a2e2580
+    AND topic0 = 0xd7068ffc5712961c5b574c5848a5d5aa84d81b2e67ee6a1b8f5ba6b7377bcc71
 
   UNION ALL
 
@@ -26,56 +29,44 @@ WITH alloc_events AS (
     block_time,
     block_number,
     tx_hash,
-    '0x' || right(cast(topic1 AS varchar), 40) AS adapter,
-    bytearray_to_uint256(substr(data, 1, 32))  AS amount_raw,
+    bytearray_to_uint256(substr(data,  1, 32)) AS amount_raw,
+    bytearray_to_uint256(substr(data, 33, 32)) AS total_deployed_raw,
     'deallocate'                                AS action
   FROM flow_evm.logs
-  WHERE contract_address = lower('<STRATEGY_MANAGER_ADDRESS>')
-    AND topic0 = 0x<DEALLOCATED_FROM_YIELD_TOPIC0>
+  WHERE contract_address = 0xd5ac451b0c50b9476107823af206ed814a2e2580
+    AND topic0 = 0xfe68061eae052626a73a04629725f82f021d874047f9379085ba9236a325aa08
 ),
 
 signed AS (
-  SELECT
-    *,
+  SELECT *,
     CASE action WHEN 'allocate' THEN amount_raw ELSE -amount_raw END AS signed_amount
   FROM alloc_events
-),
-
-daily AS (
-  SELECT
-    date_trunc('day', block_time) AS day,
-    COALESCE(adapter, 'all')      AS adapter,
-    SUM(CASE WHEN action = 'allocate'   THEN amount_raw ELSE 0 END) / 1e18 AS allocated_flow,
-    SUM(CASE WHEN action = 'deallocate' THEN amount_raw ELSE 0 END) / 1e18 AS deallocated_flow,
-    COUNT(*) AS event_count
-  FROM signed
-  GROUP BY GROUPING SETS ((date_trunc('day', block_time), adapter), (date_trunc('day', block_time)))
 )
 
+-- ── Daily allocation flows ───────────────────────────────────────────────────
 SELECT
-  day,
-  adapter,
-  allocated_flow,
-  deallocated_flow,
-  allocated_flow - deallocated_flow AS net_flow,
-  event_count
-FROM daily
-ORDER BY day DESC, adapter
+  date_trunc('day', block_time)                                             AS day,
+  SUM(CASE WHEN action = 'allocate'   THEN amount_raw ELSE 0 END) / 1e18  AS allocated_flow,
+  SUM(CASE WHEN action = 'deallocate' THEN amount_raw ELSE 0 END) / 1e18  AS deallocated_flow,
+  (SUM(CASE WHEN action = 'allocate'   THEN amount_raw ELSE 0 END)
+   - SUM(CASE WHEN action = 'deallocate' THEN amount_raw ELSE 0 END)) / 1e18
+                                                                            AS net_flow,
+  MAX(total_deployed_raw) / 1e18                                            AS deployed_eod,
+  COUNT(*)                                                                   AS event_count
+FROM signed
+GROUP BY 1
+ORDER BY 1 DESC
 ;
 
--- ── Running deployed capital ─────────────────────────────────────────────────
--- Shows the cumulative capital deployed at each point in time
+-- ── Running deployed capital per event ───────────────────────────────────────
+-- totalDeployed field is updated in-contract after each action — use it directly.
 SELECT
   block_time,
   tx_hash,
-  adapter,
   action,
-  amount_raw / 1e18 AS amount_flow,
-  SUM(signed_amount) OVER (
-    PARTITION BY adapter
-    ORDER BY block_number, tx_hash
-  ) / 1e18 AS deployed_cumulative
-FROM signed
+  amount_raw / 1e18          AS amount_flow,
+  total_deployed_raw / 1e18  AS total_deployed_after
+FROM alloc_events
 ORDER BY block_number DESC
 LIMIT 100
 ;

@@ -1,32 +1,32 @@
 -- 01_tvl_over_time.sql
 -- Axiom Vault TVL over time on Flow EVM (chain 747)
--- Uses Deposit and Withdraw events to compute net TVL per block
+-- Uses Deposit and Withdraw events to compute running net TVL.
 --
 -- ERC-4626 AxiomVault events:
---   Deposit(caller, owner, assets, shares)  topic0 = 0xdcbc1c05...
---   Withdraw(caller, receiver, owner, assets, shares) topic0 = 0xfbde7971...
+--   Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares)
+--   Withdraw(address indexed caller, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)
 --
--- Replace <VAULT_ADDRESS> with deployed vault address (checksummed, lowercase for Dune).
+-- Vault: 0xcace1b78160ae76398f486c8a18044da0d66d86d
+-- Chain: Flow EVM (747) — use flow_evm.logs  (or evm.logs WHERE blockchain = 'flow')
 
 WITH raw_events AS (
   SELECT
     block_time,
     block_number,
     tx_hash,
-    -- Deposit: topic1=caller, topic2=owner, data contains (assets, shares)
     CASE
-      WHEN topic0 = 0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4d709d7
+      WHEN topic0 = 0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7
       THEN 'deposit'
-      WHEN topic0 = 0xfbde7971b16b72e8f8e2fa9be9b7d71e1c4f5519e000b9e37c9a1df3bc4b8b9f
+      WHEN topic0 = 0xfbde797d201c681b91056529119e0b02407c7bb96a4a2c75c01fc9667232c8db
       THEN 'withdraw'
     END AS event_type,
-    -- assets is first word of non-indexed data
+    -- assets = first 32 bytes of non-indexed data (same position for both events)
     bytearray_to_uint256(substr(data, 1, 32)) AS assets_raw
   FROM flow_evm.logs
-  WHERE contract_address = lower('<VAULT_ADDRESS>')
+  WHERE contract_address = 0xcace1b78160ae76398f486c8a18044da0d66d86d
     AND topic0 IN (
-      0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4d709d7,  -- Deposit
-      0xfbde7971b16b72e8f8e2fa9be9b7d71e1c4f5519e000b9e37c9a1df3bc4b8b9f   -- Withdraw
+      0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7,  -- Deposit
+      0xfbde797d201c681b91056529119e0b02407c7bb96a4a2c75c01fc9667232c8db   -- Withdraw
     )
 ),
 
