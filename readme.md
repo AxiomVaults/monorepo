@@ -119,6 +119,10 @@ No whitelisting required — Eisen discovers the pair automatically via factory 
 
 ---
 
+## The Opportunity
+
+ankrFLOW is always worth more than WFLOW because it continuously accrues staking rewards — so at any given moment 1 ankrFLOW should trade at a premium to WFLOW.
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
