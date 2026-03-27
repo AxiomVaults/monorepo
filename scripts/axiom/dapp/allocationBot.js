@@ -1,7 +1,7 @@
 /**
  * allocationBot.js — Axiom Vault smart keeper bot.
  *
- * Inspired by Origin ARM but adapted for Axiom's architecture:
+ * Axiom Vault keeper bot:
  *   • Monitors vault buffer ratio and rebalances capital into/out of yield strategies
  *   • Monitors MORE health factor and deleverages if approaching liquidation
  *   • Claims matured ankrFLOW redemption requests automatically

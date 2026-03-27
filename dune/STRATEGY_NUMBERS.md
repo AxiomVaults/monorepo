@@ -1,4 +1,4 @@
-# Axiom Vault - ARM Strategy: On-Chain Evidence and Yield Model
+# Axiom Vault - Spread Capture Strategy: On-Chain Evidence and Yield Model
 
 All numbers from Dune queries against Flow EVM mainnet (chain 747).  
 Data range: **Sep 2024 - Mar 2026** (18 months).
@@ -148,15 +148,15 @@ Oct-Nov 2025 had $3M-$13M in weekly deployable ankrFLOW at discount. The pool is
 
 ---
 
-## 6. Comparable: Origin ARM
+## 6. Comparable: Ethereum Liquid Staking Spread Vaults
 
-Origin ARM on Ethereum runs the same model against stETH/WETH:
-- Buys stETH at discount when price < 1 ETH
-- Earns Lido staking yield while holding
-- Redeems 1:1 at par
+Similar spread-capture vaults on Ethereum run the same model against stETH/WETH:
+- Buy LST at discount when price < fair value
+- Earn staking yield while holding
+- Redeem 1:1 at par
 - Reported APY: **6-15%** normal, **30-50%+** during depeg events
 
-Axiom is the same model on ankrFLOW/WFLOW on Flow. Confirmed spread data (243 bps avg, 695 bps peak) lines up directly with Origin ARM's earnings profile.
+Axiom runs the same model on ankrFLOW/WFLOW on Flow. Confirmed spread data (243 bps avg, 695 bps peak) lines up with comparable vault earnings profiles.
 
 ---
 

@@ -1,5 +1,5 @@
 -- 05_arm_entry_windows.sql
--- ARM strategy entry window summary — weeks where ankrFLOW was underpriced on DEX
+-- Entry window summary — weeks where ankrFLOW was underpriced on DEX
 -- Filters to spread_bps > 50 (vault should be buying ankrFLOW aggressively).
 -- Shows how many weeks per year the strategy triggers and total deployable volume.
 --

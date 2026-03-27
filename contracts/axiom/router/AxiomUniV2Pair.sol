@@ -43,7 +43,7 @@ interface IAxiomVaultLiquidity {
 ///
 ///      ─── SWAP DIRECTION ───
 ///      This pair only supports one direction: token1 → token0 (sell rToken, receive base).
-///      Selling base asset to receive rToken is blocked (ARM-style single-directional venue).
+///      Selling base asset to receive rToken is blocked (single-directional venue).
 ///      amount0Out > 0, amount1Out == 0 in swap().
 ///
 ///      ─── EISEN INTEGRATION ───

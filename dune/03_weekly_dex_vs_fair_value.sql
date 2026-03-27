@@ -1,5 +1,5 @@
 -- 03_weekly_dex_vs_fair_value.sql
--- Weekly DEX rate vs fair value — ARM strategy proof (core dashboard query)
+-- Weekly DEX rate vs fair value — spread strategy proof (core dashboard query)
 --
 -- dex_rate     = actual WFLOW paid per ankrFLOW on PunchSwap (from on-chain transfers)
 -- fair_value_rate = oracle ratio (prices.day)

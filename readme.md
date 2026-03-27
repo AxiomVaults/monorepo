@@ -1,6 +1,6 @@
 # Axiom Vaults
 
-A Flow-native vault that acts as a liquidity venue. ARM-style spread capture on redeemable assets, with a secondary yield leg and full Eisen router compatibility.
+A Flow-native vault that acts as a liquidity venue. Spread capture on redeemable assets, with a secondary yield leg and full Eisen router compatibility.
 
 ## Axiom Vaults v1 — Module Reference
 
