@@ -145,6 +145,10 @@ Beyond looping, there aren't many good sources of APY on Flow — this adds fund
 | Active spread windows | 12–15% |
 | High-volatility periods (e.g. Oct–Jan) | 25–35% |
 
+## Axiom Vault
+
+Axiom Vault is an ERC-4626 vault on Flow EVM. You deposit WFLOW, receive axWFLOW shares, and the vault runs the ankrFLOW spread strategy automatically. Share price compounds as yield accrues. Withdraw anytime.
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
