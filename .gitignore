@@ -2,4 +2,9 @@
 
 context/
 context/*
-context/.
+context/
+
+# Next.js build outputs
+dapp/.next/
+dapp/node_modules/
+.
