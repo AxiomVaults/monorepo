@@ -40,3 +40,7 @@ Capital is routed across four integrated yield adapters — no single point of f
 | LP Farming | PunchSwap V2 | ~4% |
 
 A keeper bot reads live APYs from each protocol every hour and calls `autoRebalance()` — idle capital always moves to whichever adapter is currently highest.
+
+---
+
+## Compounding Utility
