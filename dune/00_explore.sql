@@ -161,9 +161,108 @@ SELECT
   topic1,
   topic2,
   topic3,
-  octet_length(data) AS data_bytes
+  length(data) AS data_bytes
 FROM flow.logs
 WHERE contract_address = 0x2880ab155794e7179c9ee2e38200202908c17b43
   AND topic0 = 0xd06a6b7f4918494b3719217d1802786c1f5112a6c1d88fe2cfec00b4584f6aec
 ORDER BY block_time DESC
 LIMIT 5
+
+
+-- ══ CONFIRMED FROM E ══
+-- 0x17e96496212d06eb1ff10c6f853669cc9947a1e7 = LIVE ankrFLOW/WFLOW pair, 449K swaps
+-- ankrFLOW = token0 (0x1b97... < 0xd3bf...), WFLOW = token1
+-- UniV2: data = abi.encode(amount0In, amount1In, amount0Out, amount1Out) = 128 bytes
+-- ─────────────────────────────────────────────────────────────────────────────
+
+
+-- ══ QUERY H: Real swap prices from the actual DEX pair — GUARANTEED DATA ══
+-- Uses 0x17e96496 (449K Swap events confirmed). Computes WFLOW-per-ankrFLOW market rate
+-- vs the prices.day fair value ratio. Positive spread_bps = discount opportunity.
+-- ankrFLOW = token0, WFLOW = token1.
+
+WITH swaps AS (
+  SELECT
+    block_time,
+    tx_hash,
+    -- data layout: amount0In | amount1In | amount0Out | amount1Out (32 bytes each)
+    CAST(bytearray_to_uint256(substr(data,  1, 32)) AS DOUBLE) / 1e18 AS ankrflow_in,
+    CAST(bytearray_to_uint256(substr(data, 33, 32)) AS DOUBLE) / 1e18 AS wflow_in,
+    CAST(bytearray_to_uint256(substr(data, 65, 32)) AS DOUBLE) / 1e18 AS ankrflow_out,
+    CAST(bytearray_to_uint256(substr(data, 97, 32)) AS DOUBLE) / 1e18 AS wflow_out
+  FROM flow.logs
+  WHERE contract_address = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+    AND topic0 = 0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822
+),
+dex_prices AS (
+  SELECT
+    DATE_TRUNC('week', block_time)      AS week,
+    -- ankrFLOW→WFLOW direction: rate = wflow_out / ankrflow_in
+    AVG(CASE WHEN ankrflow_in > 0.1 AND wflow_out > 0.1
+             THEN wflow_out / ankrflow_in END)  AS dex_wflow_per_ankrflow,
+    COUNT(*) AS swap_count,
+    SUM(CASE WHEN ankrflow_in > 0 THEN ankrflow_in ELSE ankrflow_out END) AS vol_ankrflow
+  FROM swaps
+  GROUP BY 1
+),
+fair_value AS (
+  SELECT
+    DATE_TRUNC('week', timestamp) AS week,
+    AVG(price) AS p_ankr
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+  GROUP BY 1
+),
+wflow_price AS (
+  SELECT
+    DATE_TRUNC('week', timestamp) AS week,
+    AVG(price) AS p_wflow
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address = 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+  GROUP BY 1
+)
+SELECT
+  d.week,
+  d.swap_count,
+  ROUND(d.vol_ankrflow, 2)                                                  AS vol_ankrflow,
+  ROUND(d.dex_wflow_per_ankrflow, 6)                                        AS dex_rate,
+  ROUND(f.p_ankr / NULLIF(w.p_wflow, 0), 6)                                AS fair_value_rate,
+  ROUND((f.p_ankr / NULLIF(w.p_wflow, 0) - d.dex_wflow_per_ankrflow)
+        / NULLIF(d.dex_wflow_per_ankrflow, 0) * 10000, 1)                  AS spread_bps
+FROM dex_prices d
+LEFT JOIN fair_value f ON f.week = d.week
+LEFT JOIN wflow_price w ON w.week = d.week
+WHERE d.week >= DATE '2024-10-01'
+ORDER BY d.week DESC
+
+
+-- ══ QUERY I: Weeks where ankrFLOW traded at a DISCOUNT — the ARM entry windows ══
+-- Filters Query F ratio < 1.0 (ankrFLOW cheaper than WFLOW in USD terms).
+-- These are exactly the moments the vault should be buying ankrFLOW aggressively.
+
+WITH ankr AS (
+  SELECT DATE_TRUNC('week', timestamp) AS week, AVG(price) AS p
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+  GROUP BY 1
+),
+wflow AS (
+  SELECT DATE_TRUNC('week', timestamp) AS week, AVG(price) AS p
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address = 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+  GROUP BY 1
+)
+SELECT
+  a.week,
+  ROUND(a.p, 6)                        AS ankrflow_usd,
+  ROUND(w.p, 6)                        AS wflow_usd,
+  ROUND(a.p / NULLIF(w.p, 0), 6)      AS ratio,
+  ROUND((1 - a.p / NULLIF(w.p, 0)) * 100, 3) AS discount_pct
+FROM ankr a
+JOIN wflow w ON a.week = w.week
+WHERE a.p / NULLIF(w.p, 0) < 1.05     -- within 5% of parity or below
+ORDER BY a.week DESC
