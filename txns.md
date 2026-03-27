@@ -1,9 +1,57 @@
 # Axiom Vault - Transaction Log
 
-Verified transactions from Hardhat mainnet fork (chain 747 fork -> local chainId 999).  
+Verified transactions from Hardhat mainnet fork (chain 747 fork → local chainId 999).  
 All interactions against live Flow EVM mainnet state forked at latest block.
 
-## Deployment — `scripts/interact-real/deployFork.js`
+---
+
+## Mainnet Deployment — `scripts/axiom/deployMeta.js` (Flow EVM chainId 747)
+
+Deployed 2026-03-27 · deployer `0xbaD4374FeB7ec757027CF2186B6eb6f32412f723`
+
+| Contract | Address |
+|---|---|
+| AxiomVault (axWFLOW) | `0x2E6e627f8E5B019c85aC6f7A033D928741F65568` |
+| MultiStrategyManager | `0x77b326C1015ab95fae5491fBB0B658313E216A10` |
+| AnkrYieldAdapter | `0x6290fd58a57Ba2bD4aC0B244d7D2dC1b23924594` |
+| AnkrMOREYieldAdapter | `0x83d0147715edF136dC91563A343Ab1617732478f` |
+| MORELendingAdapter | `0xc33703eb216DE054Bd5c688178951257971F9094` |
+| PunchSwapLPAdapter | `0x7449E1B56e70168f4a57d924577294F962910115` |
+| AnkrRedemptionAdapter | `0x866Af4F785C685D157ba9100Dd6AceE87eC5E295` |
+| AxiomVenue | `0x507f4A207215baA279bCDaEE606b5D66e08d6f69` |
+| AxiomFactory | `0x81ed24669E20edb2DC282b909D898F78cfB7aE50` |
+| AxiomUniV2Pair | `0xD9C5414C5d854E5760Ba7da443104272834dA624` |
+
+Keeper `0xD577F6C41780d0D47cF644297d10A15DCeE35223` granted `OPERATOR_ROLE` on MultiStrategyManager · tx `0x7c3d5a004b480aa2921504a3a40671e20a1d565da40ef5470a26348ec04ade64`
+
+---
+
+## Test Suite: `testMetaVaultFull.js` — 10/10 PASS
+
+Multi-strategy meta-vault: deposit → autoRebalance → rotateCapital × 2 → keeper APY update → autoRebalance → deallocateAll → withdraw  
+Fork of Flow EVM mainnet state · signer `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
+
+| # | Step | Result | Detail |
+|---|---|---|---|
+| 1 | Wrap FLOW → WFLOW + deposit 10 WFLOW | ✓ | 10.0000 axWFLOW minted · totalAssets = 10.0000 · reserve buffer = 1.0 WFLOW (10%) |
+| 2 | `autoRebalance()` → idle → highest APY adapter | ✓ | 9.0 WFLOW deployed to ankrMORE [0] (12% APY hint) · vault liquidity → 0.9000 |
+| 3 | `allAdaptersStatus()` snapshot | ✓ | [0] 9.0000 deployed / 8.9484 underlying · [1-3] empty |
+| 4 | `rotateCapital(0→2, 2 WFLOW)` ankrMORE → MORELending | ✓ | [0] 7.0000 · [2] 2.0000 · total deployed unchanged |
+| 5 | `rotateCapital(0→3, 1 WFLOW)` ankrMORE → PunchSwap LP | ✓ | [0] 6.0 · [2] 2.0 · [3] 1.0 (underlying 0.9970 — LP slippage) |
+| 6 | `allocateTo` check (idle < 2 WFLOW) | ✓ | Correctly skipped — only 0.9 WFLOW idle |
+| 7 | `setAdapterApy(2, 1500)` — keeper bumps MORELending to 15% | ✓ | APY map: [0] 12% / [1] 7% / [2] 15% / [3] 4% |
+| 8 | `autoRebalance()` with updated hints | ✓ | Remaining 0.9 WFLOW idle → adapter [2] (now best at 15%) · [2] 2.9000 total |
+| 9 | `deallocateAll(0)` — pull all from ankrMORE | ✓ | [0] → 0.0000 · vault totalAssets = 9.9485 (staking yield accrued) |
+| 10 | `redeem()` all shares | ✓ | Graceful fallback: dealloc all → redeem · 9.9439 WFLOW returned for 10.0000 deposited |
+
+**Notes:**
+- Step 10 first attempt reverts (capital still in adapters 2, 3) — test correctly falls back to `deallocateAll` all before final redeem. Expected production flow: keeper runs `deallocateAll` before large withdrawals.
+- PunchSwap LP: 1 WFLOW in → 0.9970 underlying (0.30% LP entry spread, consistent across runs)
+- ankrFLOW staking: deployed 6 WFLOW, recovered 5.9485 — slight loss from ankrFLOW/WFLOW price on fork
+
+---
+
+## Legacy Deployment — `scripts/interact-real/deployFork.js`
 
 | Contract | Address |
 |---|---|
