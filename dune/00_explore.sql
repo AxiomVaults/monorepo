@@ -266,3 +266,23 @@ FROM ankr a
 JOIN wflow w ON a.week = w.week
 WHERE a.p / NULLIF(w.p, 0) < 1.05     -- within 5% of parity or below
 ORDER BY a.week DESC
+
+
+-- ══ QUERY J: Peek raw data from actual pair — diagnose why H returns 0 ══
+-- data_len tells us how many bytes. If 128 = correct ABI layout. If 0 = empty.
+-- Also tries varbinary_substring which some Dune chains need instead of substr.
+
+SELECT
+  block_time,
+  topic1,
+  topic2,
+  length(data)                                                    AS data_len,
+  bytearray_to_uint256(varbinary_substring(data,  1, 32)) / 1e18 AS word1,
+  bytearray_to_uint256(varbinary_substring(data, 33, 32)) / 1e18 AS word2,
+  bytearray_to_uint256(varbinary_substring(data, 65, 32)) / 1e18 AS word3,
+  bytearray_to_uint256(varbinary_substring(data, 97, 32)) / 1e18 AS word4
+FROM flow.logs
+WHERE contract_address = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+  AND topic0 = 0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822
+ORDER BY block_time DESC
+LIMIT 5
