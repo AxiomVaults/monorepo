@@ -25,6 +25,36 @@ interface IPunchSwapV2Router {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
+    // ─── Liquidity ────────────────────────────────────────────────────────────
+
+    /// @notice Add liquidity to a tokenA/tokenB pair, creating it if it doesn't exist.
+    /// @return amountA   Actual amount of tokenA added
+    /// @return amountB   Actual amount of tokenB added
+    /// @return liquidity LP tokens minted to `to`
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
+
+    /// @notice Remove liquidity from a tokenA/tokenB pair.
+    /// @return amountA   Amount of tokenA received
+    /// @return amountB   Amount of tokenB received
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB);
+
     // ─── Quotes (view) ────────────────────────────────────────────────────────
 
     /// @notice Given an exact input amount, returns the maximum output amounts along the path.
