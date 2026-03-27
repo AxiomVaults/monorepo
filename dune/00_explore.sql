@@ -544,18 +544,10 @@ FROM dex d
 LEFT JOIN fv f ON f.week = d.week
 ORDER BY d.week DESC
 
-SELECT
-  contract_address,
-  COUNT(*)              AS transfer_count,
-  SUM(CAST(value AS DOUBLE)) / 1e18 AS total_amount
-FROM erc20_flow.evt_transfer
-WHERE "to"   = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
-   OR "from" = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
-GROUP BY 1
-ORDER BY 2 DESC
 
-
--- ══ QUERY N: Find which pair actually trades ankrFLOW ══
+-- ══ QUERY N (HISTORICAL — pair already found, kept for reference) ══
+-- RESULT: 0x7854498d4d1b2970fcb4e6960ddf782a68463a43 = real ankrFLOW/WFLOW pair
+-- Find which pair actually trades ankrFLOW ══
 -- No pair address assumed. Finds every address that received ankrFLOW transfers
 -- AND is also a sender of WFLOW — that is the real active pair.
 
