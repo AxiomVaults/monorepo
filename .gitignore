@@ -7,4 +7,13 @@ context/
 # Next.js build outputs
 dapp/.next/
 dapp/node_modules/
+
+# General node / build artifacts (all nested locations)
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/.turbo/
+**/.cache/
+*.tsbuildinfo
 .
