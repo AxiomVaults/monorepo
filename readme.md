@@ -149,6 +149,10 @@ Beyond looping, there aren't many good sources of APY on Flow — this adds fund
 
 Axiom Vault is an ERC-4626 vault on Flow EVM. You deposit WFLOW, receive axWFLOW shares, and the vault runs the ankrFLOW spread strategy automatically. Share price compounds as yield accrues. Withdraw anytime.
 
+### Future Utility — axWFLOW as Collateral
+
+Post-audit, if axWFLOW is listed as collateral on MORE Markets you can loop the position and amplify returns without leaving the Flow ecosystem.
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
