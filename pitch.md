@@ -27,3 +27,5 @@ Axiom sits on the patient side of that trade — systematically buying the disco
 ---
 
 ## What Axiom Does
+
+Axiom is an ERC-4626 vault that accepts WFLOW deposits and issues **axWFLOW** — a yield-bearing share token that appreciates as the vault earns.
