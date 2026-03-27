@@ -31,3 +31,10 @@ Axiom sits on the patient side of that trade — systematically buying the disco
 Axiom is an ERC-4626 vault that accepts WFLOW deposits and issues **axWFLOW** — a yield-bearing share token that appreciates as the vault earns.
 
 Capital is routed across four integrated yield adapters — no single point of failure, no manual rebalancing required.
+
+| Strategy | Protocol | Est. APY |
+|---|---|---|
+| ankrFLOW Staking | Ankr | ~7% |
+| Leveraged Staking | Ankr + MORE Markets | ~12% |
+| WFLOW Lending | MORE Markets | ~6% |
+| LP Farming | PunchSwap V2 | ~4% |
