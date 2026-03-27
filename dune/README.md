@@ -1,8 +1,6 @@
-# Dune Analytics Queries — Axiom Vault
+# Dune Analytics Queries - Axiom Vault
 
-All addresses and topic0 hashes are pre-filled. Copy any query and paste directly into Dune Analytics → New Query → select **Flow EVM** chain.
-
-> ⚠ These are **fork/testnet addresses** (deployed against mainnet state). Replace with mainnet deployment addresses once live.
+All addresses and topic0 hashes are pre-filled. Copy any query and paste directly into Dune Analytics -> New Query -> select **Flow EVM** chain.
 
 ## Contract Addresses
 

@@ -1,9 +1,7 @@
-# Axiom Vault — Transaction Log
+# Axiom Vault - Transaction Log
 
-Verified transactions from Hardhat mainnet fork (chain 747 fork → local chainId 999).
+Verified transactions from Hardhat mainnet fork (chain 747 fork -> local chainId 999).  
 All interactions against live Flow EVM mainnet state forked at latest block.
-
----
 
 ## Deployment — `scripts/interact-real/deployFork.js`
 
@@ -20,9 +18,9 @@ All interactions against live Flow EVM mainnet state forked at latest block.
 
 ---
 
-## Test Suite: `testRealFullCycle.js` — 12/12 PASS
+## Test Suite: `testRealFullCycle.js` - 12/12 PASS
 
-> Full lifecycle: deposit → allocate → yield → swap → redemption → withdraw
+Full lifecycle: deposit -> allocate -> yield -> swap -> redemption -> withdraw
 
 | # | Step | Result | Tx Hash (fork) |
 |---|---|---|---|
@@ -41,9 +39,9 @@ All interactions against live Flow EVM mainnet state forked at latest block.
 
 ---
 
-## Test Suite: `testRealVenueSwap.js` — 5/5 PASS
+## Test Suite: `testRealVenueSwap.js` - 5/5 PASS
 
-> Venue exchange: ankrFLOW → WFLOW via approval-first flow
+Venue exchange: ankrFLOW -> WFLOW via approval-first flow
 
 | # | Step | Result |
 |---|---|---|
@@ -55,9 +53,9 @@ All interactions against live Flow EVM mainnet state forked at latest block.
 
 ---
 
-## Test Suite: `testRealRedemption.js` — 6/6 PASS
+## Test Suite: `testRealRedemption.js` - 6/6 PASS
 
-> Ankr native unbonding redemption queue
+Ankr native unbonding redemption queue
 
 | # | Step | Result |
 |---|---|---|
@@ -70,9 +68,9 @@ All interactions against live Flow EVM mainnet state forked at latest block.
 
 ---
 
-## Test Suite: `testEisenSwap.js` — 7/7 PASS
+## Test Suite: `testEisenSwap.js` - 7/7 PASS
 
-> End-to-end Eisen/aggregator permissionless routing
+End-to-end Eisen/aggregator permissionless routing
 
 | # | Step | Description | Tx Hash (fork) |
 |---|---|---|---|
@@ -84,12 +82,12 @@ All interactions against live Flow EVM mainnet state forked at latest block.
 | 6 | venue.swapExactTokensForTokens (router-style) | `0xed7548d9056341e682ce8570733b3ce9abaccf7528ac506de2de3fdcbb097b3f` | ✓ |
 | 7 | Inventory auto-flushed, redemption queued | Venue state verified | ✓ |
 
-### Key observations from testEisenSwap
+### Notes from testEisenSwap
 
-- **Factory discovery**: `factory.allPairs(0)` = `0x07882Ae1ecB7429a84f1D53048d35c4bB2056877` — Eisen can discover pair permissionlessly via factory enumeration
-- **Pricing**: `getAmountsOut` gives flat-rate (exact 30 bps discount), always better than AMM formula for any trade size (no price impact on Axiom side)
-- **Routing bytes**: `ethers.toUtf8Bytes("eisen:v1:route:axiom")` passed as `data` parameter — no longer rejected (fixed in AxiomUniV2Pair)
-- **Virtual reserves**: reserve0 = vault.availableLiquidity() ≈ 1.8 WFLOW, reserve1 = reserve0 × 10000/9970 — AMM-compatible view for sorting
+- Factory discovery: `factory.allPairs(0)` = `0x07882Ae1ecB7429a84f1D53048d35c4bB2056877` - Eisen can discover pair permissionlessly via factory enumeration
+- Pricing: `getAmountsOut` gives flat-rate (exact 30 bps discount), always better than AMM formula for any trade size (no price impact on Axiom side)
+- Routing bytes: `ethers.toUtf8Bytes("eisen:v1:route:axiom")` passed as `data` parameter - no longer rejected (fixed in AxiomUniV2Pair)
+- Virtual reserves: reserve0 = vault.availableLiquidity() ~1.8 WFLOW, reserve1 = reserve0 x 10000/9970 - AMM-compatible view for sorting
 
 ---
 
