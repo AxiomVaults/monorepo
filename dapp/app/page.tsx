@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar'
 import VaultStats from '@/components/VaultStats'
 import DepositPanel from '@/components/DepositPanel'
+import AllocationBreakdown from '@/components/AllocationBreakdown'
 import { ADDRESSES } from '@/lib/contracts'
 
 export default function Home() {
@@ -29,12 +30,12 @@ export default function Home() {
           </h1>
 
           <p className="text-[#888] max-w-lg mx-auto text-lg leading-relaxed">
-            Deposit WFLOW. Earn automated yield through spread capture and
-            liquid staking — no active management required.
+            Deposit WFLOW. Earn automated yield across ankrFLOW staking,
+            MORE lending, and PunchSwap LP — rotated to whichever is richest.
           </p>
 
           <div className="flex items-center justify-center gap-6 mt-6 text-sm">
-            <Stat label="Strategy" value="ankrFLOW spread + staking" />
+            <Stat label="Strategy" value="Multi-adapter meta-vault" />
             <div className="w-px h-8 bg-[#1a1a1e]" />
             <Stat label="Asset" value="WFLOW (ERC-4626)" />
             <div className="w-px h-8 bg-[#1a1a1e]" />
@@ -43,8 +44,13 @@ export default function Home() {
         </div>
 
         {/* Stats */}
-        <div className="mb-8">
+        <div className="mb-6">
           <VaultStats />
+        </div>
+
+        {/* Allocation breakdown across all yield adapters */}
+        <div className="mb-8">
+          <AllocationBreakdown />
         </div>
 
         {/* Main layout: deposit panel + info */}
@@ -60,7 +66,8 @@ export default function Home() {
               title="How it works"
               items={[
                 'Deposit WFLOW and receive axWFLOW shares',
-                'Vault allocates to ankrFLOW staking when spread is favorable',
+                'MultiStrategyManager routes capital to highest-APY adapter',
+                'Keeper bot updates APY hints; autoRebalance() optimises allocation',
                 'Yield accrues into share price — no claiming needed',
                 'Redeem shares anytime for WFLOW + accumulated yield',
               ]}
@@ -93,6 +100,9 @@ export default function Home() {
               className="hover:text-[#888] transition-colors"
             >
               Contract
+            </a>
+            <a href="/docs" className="hover:text-[#888] transition-colors">
+              Docs
             </a>
             <a href="/roadmap" className="hover:text-[#888] transition-colors">
               Roadmap
@@ -154,19 +164,24 @@ function InfoCard({
 function YieldBreakdown() {
   const sources = [
     {
+      name: 'ankrMORE Leveraged',
+      desc: 'Stake WFLOW → ankrFLOW, supply to MORE Markets, borrow WFLOW again (60% LTV). Compounds the staking spread through a single loop.',
+      pct: 12,
+    },
+    {
       name: 'ankrFLOW Staking',
-      desc: 'FLOW deposited into Ankr earns native staking rewards (~7% base APY)',
+      desc: 'Plain liquid staking via Ankr — FLOW earns Proof-of-Stake rewards with no leverage and instant exit via PunchSwap.',
       pct: 7,
     },
     {
-      name: 'DEX Spread Capture',
-      desc: 'Vault buys ankrFLOW at discount on PunchSwap when spread > 50 bps and redeems at fair value',
-      pct: 8,
+      name: 'MORE Lending',
+      desc: 'Supply WFLOW directly to MORE Markets and earn variable supply APY. No price risk; fully liquid withdrawal.',
+      pct: 6,
     },
     {
-      name: 'Idle WFLOW Buffer',
-      desc: 'Reserve buffer kept liquid for instant withdrawals; earns zero but ensures solvency',
-      pct: 0,
+      name: 'PunchSwap LP',
+      desc: 'Provide liquidity to the ankrFLOW/WFLOW pair on PunchSwap. Earns 0.3% swap fees from arbitrageurs keeping the peg tight.',
+      pct: 4,
     },
   ]
 
@@ -174,7 +189,7 @@ function YieldBreakdown() {
     <div className="p-[1.5px] rounded-2xl bg-gradient-to-br from-[#e81cff]/30 to-[#40c9ff]/30">
       <div className="bg-[#0f0f11] rounded-[14px] px-6 py-5">
         <p className="text-xs text-[#888] uppercase tracking-widest mb-5">Yield sources</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {sources.map((s) => (
             <div key={s.name}>
               <div className="flex items-center justify-between mb-2">

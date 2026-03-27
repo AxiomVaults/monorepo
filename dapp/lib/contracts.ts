@@ -1,10 +1,12 @@
 // Contract addresses on Flow EVM (chain 747)
 // Axiom contracts: update VAULT address after mainnet deployment
 export const ADDRESSES = {
-  WFLOW:  '0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e' as `0x${string}`,
-  ANKR_FLOW: '0x1b97100ea1d7126c4d60027e231ea4cb25314bdb' as `0x${string}`,
+  WFLOW:                  '0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e' as `0x${string}`,
+  ANKR_FLOW:              '0x1b97100ea1d7126c4d60027e231ea4cb25314bdb' as `0x${string}`,
   // TODO: replace with mainnet address once deployed
-  VAULT:  '0xCace1b78160AE76398F486c8a18044da0d66d86D' as `0x${string}`,
+  VAULT:                  '0xCace1b78160AE76398F486c8a18044da0d66d86D' as `0x${string}`,
+  // MultiStrategyManager — replace after deployMetaFork.js run
+  MULTI_STRATEGY_MANAGER: '0x0000000000000000000000000000000000000000' as `0x${string}`,
 } as const
 
 // AxiomVault ABI — ERC-4626 + custom extensions
@@ -146,5 +148,36 @@ export const ERC20_ABI = [
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'uint8' }],
+  },
+] as const
+
+// MultiStrategyManager ABI — meta-vault adapter routing
+export const MULTI_STRATEGY_MANAGER_ABI = [
+  {
+    name: 'allAdaptersStatus',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'names',      type: 'string[]'  },
+      { name: 'deployed',   type: 'uint256[]' },
+      { name: 'underlying', type: 'uint256[]' },
+      { name: 'apyBps',     type: 'uint256[]' },
+      { name: 'active',     type: 'bool[]'    },
+    ],
+  },
+  {
+    name: 'totalDeployedAcrossAdapters',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: 'total', type: 'uint256' }],
+  },
+  {
+    name: 'adapterCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
   },
 ] as const
