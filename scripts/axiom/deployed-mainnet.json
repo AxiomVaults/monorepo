@@ -1,0 +1,84 @@
+{
+  "network": "flow_mainnet",
+  "chainId": "747",
+  "deployer": "0xbaD4374FeB7ec757027CF2186B6eb6f32412f723",
+  "timestamp": "2026-03-27T20:07:03.504Z",
+  "realTokens": {
+    "WFLOW": "0xd3bF53DAC106A0290B0483EcBC89d40FcC961f3e",
+    "ankrFLOW": "0x1b97100eA1D7126C4d60027e231EA4CB25314bdb",
+    "ankrStaking": "0xFE8189A3016cb6A3668b8ccdAC520CE572D4287a",
+    "morePool": "0xbC92aaC2DBBF42215248B5688eB3D3d2b32F2c8d",
+    "moreDataProvider": "0x79e71e3c0EDF2B88b0aB38E9A1eF0F6a230e56bf",
+    "punchSwapRouter": "0xf45AFe28fd5519d5f8C1d4787a4D5f724C0eFa4d",
+    "punchSwapLPPair": "0x442aE0F33d66F617AF9106e797fc251B574aEdb3",
+    "stgUSDC": "0xF1815bd50389c46847f0Bda824eC8da914045D14"
+  },
+  "contracts": {
+    "vault": "0x2E6e627f8E5B019c85aC6f7A033D928741F65568",
+    "multiStrategyManager": "0x77b326C1015ab95fae5491fBB0B658313E216A10",
+    "ankrYieldAdapter": "0x6290fd58a57Ba2bD4aC0B244d7D2dC1b23924594",
+    "ankrMOREYieldAdapter": "0x83d0147715edF136dC91563A343Ab1617732478f",
+    "moreLendingAdapter": "0xc33703eb216DE054Bd5c688178951257971F9094",
+    "punchSwapLPAdapter": "0x7449E1B56e70168f4a57d924577294F962910115",
+    "ankrRedemptionAdapter": "0x866Af4F785C685D157ba9100Dd6AceE87eC5E295",
+    "venue": "0x507f4A207215baA279bCDaEE606b5D66e08d6f69",
+    "axiomFactory": "0x81ed24669E20edb2DC282b909D898F78cfB7aE50",
+    "pair": "0xD9C5414C5d854E5760Ba7da443104272834dA624"
+  },
+  "adapterRegistry": [
+    {
+      "id": 0,
+      "name": "ankrMORE Leveraged",
+      "apyBps": 1200,
+      "address": "0x83d0147715edF136dC91563A343Ab1617732478f"
+    },
+    {
+      "id": 1,
+      "name": "ankrFLOW Staking",
+      "apyBps": 700,
+      "address": "0x6290fd58a57Ba2bD4aC0B244d7D2dC1b23924594"
+    },
+    {
+      "id": 2,
+      "name": "MORE Lending",
+      "apyBps": 600,
+      "address": "0xc33703eb216DE054Bd5c688178951257971F9094"
+    },
+    {
+      "id": 3,
+      "name": "PunchSwap LP",
+      "apyBps": 400,
+      "address": "0x7449E1B56e70168f4a57d924577294F962910115"
+    }
+  ],
+  "config": {
+    "vault": {
+      "name": "Axiom Vault WFLOW",
+      "symbol": "axWFLOW"
+    },
+    "ankrMORE": {
+      "borrowFractionBps": 6000,
+      "maxSlippageBps": 100
+    },
+    "ankrYield": {
+      "maxSlippageBps": 100
+    },
+    "moreLending": {},
+    "punchSwapLP": {
+      "maxSlippageBps": 200
+    },
+    "redemption": {
+      "claimDelay": 604800,
+      "maxSlippageBps": 100
+    },
+    "pair": {
+      "discountBps": 20
+    },
+    "apy": {
+      "ankrMORE": 1200,
+      "ankrYield": 700,
+      "moreLending": 600,
+      "punchSwapLP": 400
+    }
+  }
+}

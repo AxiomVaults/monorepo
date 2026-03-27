@@ -35,7 +35,7 @@ const fs   = require("fs");
 
 const RPC_URL     = process.env.RPC_URL     || "https://mainnet.evm.nodes.onflow.org";
 const PRIV_KEY    = process.env.KEEPER_PRIVATE_KEY;
-const DEP_PATH    = process.env.DEPLOYED_JSON || path.join(__dirname, "deployed-meta-fork.json");
+const DEP_PATH    = process.env.DEPLOYED_JSON || path.join(__dirname, "deployed-mainnet.json");
 const DRY_RUN     = process.env.DRY_RUN === "true";
 
 // How much the best adapter's APY must beat the current leader before

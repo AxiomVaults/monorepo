@@ -1,10 +1,10 @@
 // Contract addresses on Flow EVM (chain 747)
-// Axiom contracts: update VAULT address after mainnet deployment
+// Deployed to mainnet 2026-03-27 — deployer 0xbaD4374FeB7ec757027CF2186B6eb6f32412f723
 export const ADDRESSES = {
   WFLOW:                  '0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e' as `0x${string}`,
   ANKR_FLOW:              '0x1b97100ea1d7126c4d60027e231ea4cb25314bdb' as `0x${string}`,
-  VAULT:                  '0xE8addD62feD354203d079926a8e563BC1A7FE81e' as `0x${string}`,
-  MULTI_STRATEGY_MANAGER: '0xe039608E695D21aB11675EBBA00261A0e750526c' as `0x${string}`,
+  VAULT:                  '0x2E6e627f8E5B019c85aC6f7A033D928741F65568' as `0x${string}`,
+  MULTI_STRATEGY_MANAGER: '0x77b326C1015ab95fae5491fBB0B658313E216A10' as `0x${string}`,
 } as const
 
 // AxiomVault ABI — ERC-4626 + custom extensions
