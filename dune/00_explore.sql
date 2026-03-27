@@ -269,20 +269,139 @@ ORDER BY a.week DESC
 
 
 -- ══ QUERY J: Peek raw data from actual pair — diagnose why H returns 0 ══
--- data_len tells us how many bytes. If 128 = correct ABI layout. If 0 = empty.
--- Also tries varbinary_substring which some Dune chains need instead of substr.
+-- RESULT: data_len=128 ✓ but topic2 is a UINT not address → PunchSwap has
+-- a different Swap event layout, raw data offsets are wrong.
+-- FIX: use erc20_flow.evt_transfer (decoded) to read amounts — see Query K.
+-- ─────────────────────────────────────────────────────────────────────────────
 
+
+-- ══ QUERY K: Real per-swap prices via decoded ERC20 transfers — DEFINITIVE ══
+-- Finds transfers INTO and OUT OF the pair address in the same tx.
+-- Completely bypasses raw data parsing. Uses confirmed-working erc20_flow.evt_transfer.
+-- Also confirms which two tokens are actually in the pair.
+
+WITH inflows AS (
+  SELECT
+    evt_tx_hash,
+    evt_block_time,
+    contract_address                    AS token_in,
+    CAST(value AS DOUBLE) / 1e18        AS amount_in
+  FROM erc20_flow.evt_transfer
+  WHERE "to" = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,  -- ankrFLOW
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e   -- WFLOW
+    )
+    AND evt_block_date >= DATE '2025-01-01'
+),
+outflows AS (
+  SELECT
+    evt_tx_hash,
+    contract_address                    AS token_out,
+    CAST(value AS DOUBLE) / 1e18        AS amount_out
+  FROM erc20_flow.evt_transfer
+  WHERE "from" = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+    AND evt_block_date >= DATE '2025-01-01'
+)
 SELECT
-  block_time,
-  topic1,
-  topic2,
-  length(data)                                                    AS data_len,
-  bytearray_to_uint256(varbinary_substring(data,  1, 32)) / 1e18 AS word1,
-  bytearray_to_uint256(varbinary_substring(data, 33, 32)) / 1e18 AS word2,
-  bytearray_to_uint256(varbinary_substring(data, 65, 32)) / 1e18 AS word3,
-  bytearray_to_uint256(varbinary_substring(data, 97, 32)) / 1e18 AS word4
-FROM flow.logs
-WHERE contract_address = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
-  AND topic0 = 0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822
-ORDER BY block_time DESC
-LIMIT 5
+  i.evt_block_time,
+  i.evt_tx_hash,
+  CASE i.token_in
+    WHEN 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb THEN 'ankrFLOW'
+    ELSE 'WFLOW' END                                            AS sold,
+  ROUND(i.amount_in, 4)                                        AS amount_sold,
+  CASE o.token_out
+    WHEN 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e THEN 'WFLOW'
+    ELSE 'ankrFLOW' END                                        AS bought,
+  ROUND(o.amount_out, 4)                                       AS amount_bought,
+  ROUND(
+    CASE
+      WHEN i.token_in = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+      THEN o.amount_out / NULLIF(i.amount_in, 0)   -- WFLOW per ankrFLOW
+      ELSE i.amount_in  / NULLIF(o.amount_out, 0)  -- WFLOW per ankrFLOW (reverse)
+    END, 6)                                                     AS wflow_per_ankrflow
+FROM inflows i
+JOIN outflows o
+  ON i.evt_tx_hash = o.evt_tx_hash
+  AND i.token_in   != o.token_out    -- selling one, buying the other
+WHERE i.amount_in  > 0.01
+  AND o.amount_out > 0.01
+ORDER BY i.evt_block_time DESC
+LIMIT 200
+
+
+-- ══ QUERY L: Weekly DEX rate vs fair value — FIXED version of H ══
+-- Uses Query K approach (decoded transfers) for pricing. No raw data parsing.
+
+WITH inflows AS (
+  SELECT
+    evt_tx_hash,
+    evt_block_time,
+    contract_address AS token_in,
+    CAST(value AS DOUBLE) / 1e18 AS amount_in
+  FROM erc20_flow.evt_transfer
+  WHERE "to" = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+),
+outflows AS (
+  SELECT
+    evt_tx_hash,
+    contract_address AS token_out,
+    CAST(value AS DOUBLE) / 1e18 AS amount_out
+  FROM erc20_flow.evt_transfer
+  WHERE "from" = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+),
+swaps AS (
+  SELECT
+    DATE_TRUNC('week', i.evt_block_time)  AS week,
+    CASE
+      WHEN i.token_in = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+      THEN o.amount_out / NULLIF(i.amount_in, 0)
+      ELSE i.amount_in  / NULLIF(o.amount_out, 0)
+    END                                   AS wflow_per_ankrflow,
+    i.amount_in                           AS vol_in
+  FROM inflows i
+  JOIN outflows o ON i.evt_tx_hash = o.evt_tx_hash
+    AND i.token_in != o.token_out
+  WHERE i.amount_in > 0.01 AND o.amount_out > 0.01
+),
+dex AS (
+  SELECT week, AVG(wflow_per_ankrflow) AS dex_rate, COUNT(*) AS swaps, SUM(vol_in) AS vol
+  FROM swaps
+  GROUP BY 1
+),
+fv AS (
+  SELECT DATE_TRUNC('week', timestamp) AS week,
+    AVG(CASE WHEN contract_address = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb THEN price END) AS p_ankr,
+    AVG(CASE WHEN contract_address = 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e THEN price END) AS p_wflow
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+  GROUP BY 1
+)
+SELECT
+  d.week,
+  d.swaps,
+  ROUND(d.vol, 2)                                                          AS vol_ankrflow,
+  ROUND(d.dex_rate, 6)                                                     AS dex_rate,
+  ROUND(f.p_ankr / NULLIF(f.p_wflow, 0), 6)                               AS fair_value_rate,
+  ROUND((f.p_ankr / NULLIF(f.p_wflow, 0) - d.dex_rate)
+        / NULLIF(d.dex_rate, 0) * 10000, 1)                               AS spread_bps
+FROM dex d
+LEFT JOIN fv f ON f.week = d.week
+WHERE d.week >= DATE '2024-10-01'
+ORDER BY d.week DESC
