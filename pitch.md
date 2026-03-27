@@ -38,3 +38,5 @@ Capital is routed across four integrated yield adapters — no single point of f
 | Leveraged Staking | Ankr + MORE Markets | ~12% |
 | WFLOW Lending | MORE Markets | ~6% |
 | LP Farming | PunchSwap V2 | ~4% |
+
+A keeper bot reads live APYs from each protocol every hour and calls `autoRebalance()` — idle capital always moves to whichever adapter is currently highest.
