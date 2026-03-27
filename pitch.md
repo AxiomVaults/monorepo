@@ -46,3 +46,5 @@ A keeper bot reads live APYs from each protocol every hour and calls `autoRebala
 ## Compounding Utility
 
 axWFLOW is accepted as collateral on MORE Markets.
+
+This enables a looping strategy: deposit WFLOW → receive axWFLOW → post as collateral → borrow WFLOW → deposit again.
