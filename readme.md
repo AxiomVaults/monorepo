@@ -137,6 +137,14 @@ The strategy is: buy ankrFLOW at the discount, earn staking yield while holding 
 
 Beyond looping, there aren't many good sources of APY on Flow — this adds fundamental yield diversity that the ecosystem currently lacks.
 
+### Modelled Yield
+
+| Regime | APY |
+|---|---|
+| Conservative (blended) | ~7% |
+| Active spread windows | 12–15% |
+| High-volatility periods (e.g. Oct–Jan) | 25–35% |
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
