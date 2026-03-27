@@ -52,6 +52,10 @@ interface IAxiomVault {
 
     // ─── Privileged: STRATEGY_MANAGER_ROLE ────────────────────────────────────
 
+    /// @notice Pull base asset from vault and send to the caller (strategy manager) for deployment.
+    /// @dev Only callable by accounts with STRATEGY_MANAGER_ROLE — obeys reserve buffer.
+    function deployCapital(address to, uint256 amount) external;
+
     /// @notice Record that base asset has been received back from the redemption adapter
     /// @dev Decrements totalPendingRedemption; actual token transfer is done by caller before calling this
     function receiveRedemptionProceeds(uint256 amount) external;
