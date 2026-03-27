@@ -101,3 +101,69 @@ FROM prices.day
 WHERE blockchain = 'flow'
 GROUP BY 1, 2, 3
 ORDER BY 6 DESC
+
+
+-- ══ CONFIRMED FROM D ══
+-- ankrFLOWEVM (0x1b97100...) avg $0.4464 | WFLOW (0xd3bf53...) avg $0.4380
+-- Ratio = 1.019 average premium. Clean swap rows from C = 1.14 WFLOW/ankrFLOW.
+-- 0x2aabea... = USDF   |  0x7f2735... = USDC.e  |  0x84c6a2... = not in prices
+-- ─────────────────────────────────────────────────────────────────────────────
+
+
+-- ══ QUERY E: Find the actual ankrFLOW/WFLOW DEX pair address ══
+-- Looks for UniV2 Swap events at all contracts. The pair with the most swaps
+-- involving ankrFLOW IS the live liquidity pool. Run this as a new query.
+
+SELECT
+  contract_address,
+  COUNT(*) AS swap_event_count
+FROM flow.logs
+WHERE topic0 = 0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 20
+
+
+-- ══ QUERY F: ankrFLOW/WFLOW fair value ratio over time — WILL RETURN DATA ══
+-- Uses prices.day (confirmed working). Shows the "fair value" benchmark line.
+-- If DEX price ever trades below this ratio → discount → ARM strategy profit.
+
+WITH ankr AS (
+  SELECT DATE_TRUNC('week', timestamp) AS week, AVG(price) AS p
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+  GROUP BY 1
+),
+wflow AS (
+  SELECT DATE_TRUNC('week', timestamp) AS week, AVG(price) AS p
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address = 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+  GROUP BY 1
+)
+SELECT
+  a.week,
+  ROUND(a.p, 6)                      AS ankrflow_usd,
+  ROUND(w.p, 6)                      AS wflow_usd,
+  ROUND(a.p / NULLIF(w.p, 0), 6)    AS ankrflow_wflow_ratio
+FROM ankr a
+JOIN wflow w ON a.week = w.week
+ORDER BY a.week DESC
+
+
+-- ══ QUERY G: Decode unknown 0x2880ab — raw event peek ══
+-- 1.1M events of one topic0. Check what the data looks like to identify it.
+
+SELECT
+  block_time,
+  tx_hash,
+  topic1,
+  topic2,
+  topic3,
+  octet_length(data) AS data_bytes
+FROM flow.logs
+WHERE contract_address = 0x2880ab155794e7179c9ee2e38200202908c17b43
+  AND topic0 = 0xd06a6b7f4918494b3719217d1802786c1f5112a6c1d88fe2cfec00b4584f6aec
+ORDER BY block_time DESC
+LIMIT 5
