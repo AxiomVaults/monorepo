@@ -123,6 +123,8 @@ No whitelisting required — Eisen discovers the pair automatically via factory 
 
 ankrFLOW is always worth more than WFLOW because it continuously accrues staking rewards — so at any given moment 1 ankrFLOW should trade at a premium to WFLOW.
 
+On PunchSwap it regularly doesn't. Sellers push the price below fair value, creating a temporary discount.
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
