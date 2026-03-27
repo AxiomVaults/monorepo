@@ -125,6 +125,14 @@ ankrFLOW is always worth more than WFLOW because it continuously accrues staking
 
 On PunchSwap it regularly doesn't. Sellers push the price below fair value, creating a temporary discount.
 
+From 18 months of on-chain data from Flow EVM:
+
+| Window | Stat |
+|---|---|
+| Weeks with spread > 50 bps | 17 of 48 tracked (35%) |
+| Average discount during those windows | 243 bps |
+| Largest single window | +695 bps in late Nov 2025 — over 1.2M ankrFLOW available |
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
