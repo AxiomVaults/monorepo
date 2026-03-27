@@ -405,3 +405,49 @@ FROM dex d
 LEFT JOIN fv f ON f.week = d.week
 WHERE d.week >= DATE '2024-10-01'
 ORDER BY d.week DESC
+
+
+-- ══ QUERY M: What tokens actually flow through pair 0x17e96496? ══
+-- No assumptions — finds every ERC20 token that pair ever sent or received.
+-- This tells us definitively what the pair trades.
+
+SELECT
+  contract_address,
+  COUNT(*)              AS transfer_count,
+  SUM(CAST(value AS DOUBLE)) / 1e18 AS total_amount
+FROM erc20_flow.evt_transfer
+WHERE "to"   = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+   OR "from" = 0x17e96496212d06eb1ff10c6f853669cc9947a1e7
+GROUP BY 1
+ORDER BY 2 DESC
+
+
+-- ══ QUERY N: Find which pair actually trades ankrFLOW ══
+-- No pair address assumed. Finds every address that received ankrFLOW transfers
+-- AND is also a sender of WFLOW — that is the real active pair.
+
+WITH ankr_recipients AS (
+  SELECT "to" AS addr, COUNT(*) AS cnt
+  FROM erc20_flow.evt_transfer
+  WHERE contract_address = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+    AND "to" != 0x0000000000000000000000000000000000000000
+  GROUP BY 1
+  ORDER BY 2 DESC
+  LIMIT 50
+),
+wflow_senders AS (
+  SELECT "from" AS addr, COUNT(*) AS cnt
+  FROM erc20_flow.evt_transfer
+  WHERE contract_address = 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    AND "from" != 0x0000000000000000000000000000000000000000
+  GROUP BY 1
+  ORDER BY 2 DESC
+  LIMIT 50
+)
+SELECT
+  a.addr,
+  a.cnt AS ankrflow_received,
+  w.cnt AS wflow_sent
+FROM ankr_recipients a
+JOIN wflow_senders w ON a.addr = w.addr
+ORDER BY a.cnt DESC
