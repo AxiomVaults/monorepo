@@ -153,6 +153,19 @@ Axiom Vault is an ERC-4626 vault on Flow EVM. You deposit WFLOW, receive axWFLOW
 
 Post-audit, if axWFLOW is listed as collateral on MORE Markets you can loop the position and amplify returns without leaving the Flow ecosystem.
 
+### Multi-Strategy Adapter Architecture
+
+The vault routes idle capital across four on-chain yield adapters via `MultiStrategyManager`. A keeper bot reads live APYs and calls `autoRebalance()` to shift capital to the highest-yielding adapter automatically.
+
+| ID | Adapter | Strategy | Baseline APY |
+|---|---|---|---|
+| 0 | `AnkrMOREYieldAdapter` | Leveraged ankrFLOW staking via MORE Markets borrow | ~12% |
+| 1 | `AnkrYieldAdapter` | Plain ankrFLOW staking | ~7% |
+| 2 | `MORELendingAdapter` | WFLOW supplied to MORE Markets lending pool | ~2–6% |
+| 3 | `PunchSwapLPAdapter` | ankrFLOW/WFLOW LP farming on PunchSwap V2 | ~4–11% |
+
+Capital allocation, rotation between adapters, and APY hint updates are all permissioned to the keeper operator role. The vault's `totalDeployedToYield` accounting correctly realises yield gains and LP slippage through `totalAssets` without leaving ghost balances.
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
