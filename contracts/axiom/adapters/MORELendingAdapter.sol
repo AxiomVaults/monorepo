@@ -35,11 +35,6 @@ contract MORELendingAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
     error ZeroAddress();
     error WithdrawFailed(uint256 requested, uint256 received);
 
-    // ─── Events ──────────────────────────────────────────────────────────────
-
-    event Deposited(address indexed caller, uint256 amount);
-    event Withdrew(address indexed caller, uint256 amount);
-
     // ─── State ────────────────────────────────────────────────────────────────
 
     /// @notice WFLOW token — base asset this adapter accepts and returns

@@ -53,15 +53,17 @@ function loadDeployed() {
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
-// WFLOW impersonation util — fork sends us WFLOW from a known whale
-const WFLOW_WHALE = "0xf73e26cd8b362a78b33a74f9e19ee4f3745e1a87"; // known WFLOW holder on mainnet
+// WFLOW ABI — wrap native FLOW into WFLOW via deposit()
+const WFLOW_ABI = [
+  "function deposit() payable",
+  "function balanceOf(address) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function transfer(address to, uint256 amount) returns (bool)",
+];
 
-async function getWFLOW(wflowC, to, amount) {
-  await ethers.provider.send("hardhat_impersonateAccount", [WFLOW_WHALE]);
-  await ethers.provider.send("hardhat_setBalance",         [WFLOW_WHALE, "0x56BC75E2D63100000"]); // 100 FLOW
-  const whale = await ethers.getSigner(WFLOW_WHALE);
-  await wflowC.connect(whale).transfer(to, amount);
-  await ethers.provider.send("hardhat_stopImpersonatingAccount", [WFLOW_WHALE]);
+async function getWFLOW(signerWithWFLOWABI, amount) {
+  // Wrap native FLOW → WFLOW using the deployer's existing FLOW balance
+  await (await signerWithWFLOWABI.deposit({ value: amount })).wait();
 }
 
 async function printAdapterStatus(msmC) {
@@ -92,11 +94,8 @@ async function main() {
   console.log(`  Signer: ${deployer.address}\n`);
 
   // ─── Load contracts ──────────────────────────────────────────────────────
-  const wflowC = await ethers.getContractAt(
-    "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-    tokens.WFLOW,
-    deployer
-  );
+  const wflow  = new ethers.Contract(tokens.WFLOW, WFLOW_ABI, deployer);
+  const wflowC = wflow; // shared reference used for balanceOf etc.
   const vaultC = await ethers.getContractAt("AxiomVault",          addrs.vault,                deployer);
   const msmC   = await ethers.getContractAt("MultiStrategyManager", addrs.multiStrategyManager, deployer);
 
@@ -105,27 +104,12 @@ async function main() {
 
   const depositAmount = E("10");
 
-  // Fund test wallet with WFLOW from whale
-  await getWFLOW(wflowC, deployer.address, depositAmount);
-  info(`Funded deployer with ${f(depositAmount)} WFLOW`);
+  // Wrap native FLOW → WFLOW (deployer has ~9960 FLOW on fork)
+  await getWFLOW(wflow, depositAmount);
+  info(`Wrapped ${f(depositAmount)} FLOW → WFLOW`);
 
   const wflowBefore = await wflowC.balanceOf(deployer.address);
   info(`WFLOW balance before deposit: ${f(wflowBefore)}`);
-
-  // Approve vault and deposit
-  const wflowFull = await ethers.getContractAt(
-    "contracts/axiom/mocks/MockERC20.sol:MockERC20", // use ERC20 ABI with approve
-    tokens.WFLOW,
-    deployer
-  ).catch(() => null);
-
-  // Use direct ABI instead of mock path
-  const ERC20ABI = [
-    "function approve(address spender, uint256 amount) returns (bool)",
-    "function balanceOf(address) view returns (uint256)",
-    "function transfer(address to, uint256 amount) returns (bool)",
-  ];
-  const wflow = new ethers.Contract(tokens.WFLOW, ERC20ABI, deployer);
 
   await (await wflow.approve(addrs.vault, depositAmount)).wait();
   const depositTx = await vaultC.deposit(depositAmount, deployer.address);

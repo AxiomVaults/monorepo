@@ -24,6 +24,15 @@ export default function Navbar() {
 
         {/* Links */}
         <div className="hidden sm:flex items-center gap-6 text-sm text-[#888]">
+          <a href="/" className="hover:text-white transition-colors">
+            App
+          </a>
+          <a href="/docs" className="hover:text-white transition-colors">
+            Docs
+          </a>
+          <a href="/roadmap-page" className="hover:text-white transition-colors">
+            Roadmap
+          </a>
           <a
             href="https://flowscan.io"
             target="_blank"
@@ -31,14 +40,6 @@ export default function Navbar() {
             className="hover:text-white transition-colors"
           >
             Explorer
-          </a>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white transition-colors"
-          >
-            Docs
           </a>
         </div>
 

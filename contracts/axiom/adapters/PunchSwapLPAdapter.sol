@@ -51,8 +51,8 @@ contract PunchSwapLPAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
 
     // ─── Events ──────────────────────────────────────────────────────────────
 
-    event Deposited(address indexed caller, uint256 wflowIn, uint256 lpMinted);
-    event Withdrew(address indexed caller, uint256 wflowOut, uint256 lpBurned);
+    event DepositedLP(address indexed caller, uint256 wflowIn, uint256 lpMinted);
+    event WithdrewLP(address indexed caller, uint256 wflowOut, uint256 lpBurned);
 
     // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -143,7 +143,7 @@ contract PunchSwapLPAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
             block.timestamp + SWAP_DEADLINE
         );
 
-        emit Deposited(msg.sender, amount, lpMinted);
+        emit DepositedLP(msg.sender, amount, lpMinted);
     }
 
     /// @inheritdoc IYieldAdapter
@@ -166,7 +166,7 @@ contract PunchSwapLPAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
         uint256 wflowOut = _removeLPAndConsolidate(lpToBurn);
 
         wflow.safeTransfer(msg.sender, wflowOut);
-        emit Withdrew(msg.sender, wflowOut, lpToBurn);
+        emit WithdrewLP(msg.sender, wflowOut, lpToBurn);
     }
 
     /// @inheritdoc IYieldAdapter
@@ -181,13 +181,13 @@ contract PunchSwapLPAdapter is IYieldAdapter, Ownable, ReentrancyGuard {
                 total += _swapAnkrForWFLOW(ankrDust);
             }
             if (total > 0) wflow.safeTransfer(msg.sender, total);
-            emit Withdrew(msg.sender, total, 0);
+            emit WithdrewLP(msg.sender, total, 0);
             return total;
         }
 
         total = _removeLPAndConsolidate(lpBalance);
         wflow.safeTransfer(msg.sender, total);
-        emit Withdrew(msg.sender, total, lpBalance);
+        emit WithdrewLP(msg.sender, total, lpBalance);
     }
 
     // ─── IYieldAdapter: View ──────────────────────────────────────────────────

@@ -211,10 +211,11 @@ contract MultiStrategyManager is AccessControl, ReentrancyGuard {
         // Return to vault
         IERC20(baseAsset).safeTransfer(address(vault), received);
 
-        // Update tracking (use received in case of slippage)
-        uint256 actualDeducted = received < adapters[id].deployed ? received : adapters[id].deployed;
-        adapters[id].deployed -= actualDeducted;
-        vault.updateDeployedToYield(-int256(received));
+        // Deduct the requested amount from both local tracking and vault accounting.
+        // Any slippage (received != amount) flows through to totalAssets naturally.
+        uint256 deducted = amount > adapters[id].deployed ? adapters[id].deployed : amount;
+        adapters[id].deployed -= deducted;
+        vault.updateDeployedToYield(-int256(amount));
 
         emit DeallocatedFrom(id, received, adapters[id].deployed);
     }
@@ -223,21 +224,23 @@ contract MultiStrategyManager is AccessControl, ReentrancyGuard {
     function deallocateAll(uint8 id) external onlyRole(OPERATOR_ROLE) nonReentrant {
         _requireAdapter(id);
 
+        uint256 wasDeployed = adapters[id].deployed;
+        adapters[id].deployed = 0;
+
         uint256 preBal = IERC20(baseAsset).balanceOf(address(this));
         adapters[id].adapter.withdrawAll();
         uint256 received = IERC20(baseAsset).balanceOf(address(this)) - preBal;
 
         if (received > 0) {
             IERC20(baseAsset).safeTransfer(address(vault), received);
-            vault.updateDeployedToYield(-int256(received));
+        }
+        // Reduce by the recorded deployment amount (not received) so any yield gain/loss
+        // flows through to totalAssets correctly.
+        if (wasDeployed > 0) {
+            vault.updateDeployedToYield(-int256(wasDeployed));
         }
 
-        uint256 prevDeployed = adapters[id].deployed;
-        adapters[id].deployed = 0;
-
         emit DeallocatedFrom(id, received, 0);
-        // If received > prevDeployed, yield was harvested (share price improves automatically)
-        _ = prevDeployed; // silence unused warning
     }
 
     /// @notice Move capital from one adapter to another in a single transaction.
