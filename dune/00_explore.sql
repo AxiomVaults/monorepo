@@ -407,9 +407,142 @@ WHERE d.week >= DATE '2024-10-01'
 ORDER BY d.week DESC
 
 
--- ══ QUERY M: What tokens actually flow through pair 0x17e96496? ══
--- No assumptions — finds every ERC20 token that pair ever sent or received.
--- This tells us definitively what the pair trades.
+-- ══ CONFIRMED FROM M + N ══
+-- 0x17e96496 = WFLOW/USDF pair (NOT ankrFLOW). K/L gave no results because of this.
+-- REAL ankrFLOW/WFLOW pair = 0x7854498d4d1b2970fcb4e6960ddf782a68463a43
+--   114K ankrFLOW received + 115K WFLOW sent → confirmed bidirectional swap venue
+-- ─────────────────────────────────────────────────────────────────────────────
+
+
+-- ══ QUERY O: Per-swap prices from REAL ankrFLOW/WFLOW pair ══
+-- Uses 0x7854498d (confirmed from Query N). Will return data.
+
+WITH inflows AS (
+  SELECT
+    evt_tx_hash,
+    evt_block_time,
+    contract_address                    AS token_in,
+    CAST(value AS DOUBLE) / 1e18        AS amount_in
+  FROM erc20_flow.evt_transfer
+  WHERE "to" = 0x7854498d4d1b2970fcb4e6960ddf782a68463a43
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+),
+outflows AS (
+  SELECT
+    evt_tx_hash,
+    contract_address                    AS token_out,
+    CAST(value AS DOUBLE) / 1e18        AS amount_out
+  FROM erc20_flow.evt_transfer
+  WHERE "from" = 0x7854498d4d1b2970fcb4e6960ddf782a68463a43
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+)
+SELECT
+  i.evt_block_time,
+  i.evt_tx_hash,
+  CASE i.token_in
+    WHEN 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb THEN 'ankrFLOW'
+    ELSE 'WFLOW' END                                              AS sold,
+  ROUND(i.amount_in, 4)                                          AS amount_sold,
+  CASE o.token_out
+    WHEN 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e THEN 'WFLOW'
+    ELSE 'ankrFLOW' END                                          AS bought,
+  ROUND(o.amount_out, 4)                                         AS amount_bought,
+  ROUND(
+    CASE
+      WHEN i.token_in = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+      THEN o.amount_out / NULLIF(i.amount_in, 0)
+      ELSE i.amount_in  / NULLIF(o.amount_out, 0)
+    END, 6)                                                       AS wflow_per_ankrflow
+FROM inflows i
+JOIN outflows o ON i.evt_tx_hash = o.evt_tx_hash
+  AND i.token_in != o.token_out
+WHERE i.amount_in > 0.01 AND o.amount_out > 0.01
+ORDER BY i.evt_block_time DESC
+LIMIT 200
+
+
+-- ══ QUERY P: Weekly DEX rate vs fair value — the strategy proof ══
+-- Uses real pair 0x7854498d. Shows dex_rate vs fair_value_rate and spread_bps.
+-- Positive spread_bps = DEX underpricing ankrFLOW = vault entry opportunity.
+
+WITH inflows AS (
+  SELECT
+    evt_tx_hash, evt_block_time,
+    contract_address AS token_in,
+    CAST(value AS DOUBLE) / 1e18 AS amount_in
+  FROM erc20_flow.evt_transfer
+  WHERE "to" = 0x7854498d4d1b2970fcb4e6960ddf782a68463a43
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+),
+outflows AS (
+  SELECT
+    evt_tx_hash,
+    contract_address AS token_out,
+    CAST(value AS DOUBLE) / 1e18 AS amount_out
+  FROM erc20_flow.evt_transfer
+  WHERE "from" = 0x7854498d4d1b2970fcb4e6960ddf782a68463a43
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+),
+swaps AS (
+  SELECT
+    DATE_TRUNC('week', i.evt_block_time) AS week,
+    CASE
+      WHEN i.token_in = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+      THEN o.amount_out / NULLIF(i.amount_in, 0)
+      ELSE i.amount_in  / NULLIF(o.amount_out, 0)
+    END AS wflow_per_ankrflow,
+    CASE
+      WHEN i.token_in = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb
+      THEN i.amount_in
+      ELSE o.amount_out
+    END AS vol_ankrflow
+  FROM inflows i
+  JOIN outflows o ON i.evt_tx_hash = o.evt_tx_hash
+    AND i.token_in != o.token_out
+  WHERE i.amount_in > 0.01 AND o.amount_out > 0.01
+),
+dex AS (
+  SELECT week,
+    AVG(wflow_per_ankrflow) AS dex_rate,
+    COUNT(*)                AS swap_count,
+    SUM(vol_ankrflow)       AS vol_ankrflow
+  FROM swaps GROUP BY 1
+),
+fv AS (
+  SELECT DATE_TRUNC('week', timestamp) AS week,
+    AVG(CASE WHEN contract_address = 0x1b97100ea1d7126c4d60027e231ea4cb25314bdb THEN price END) AS p_ankr,
+    AVG(CASE WHEN contract_address = 0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e THEN price END) AS p_wflow
+  FROM prices.day
+  WHERE blockchain = 'flow'
+    AND contract_address IN (
+      0x1b97100ea1d7126c4d60027e231ea4cb25314bdb,
+      0xd3bf53dac106a0290b0483ecbc89d40fcc961f3e
+    )
+  GROUP BY 1
+)
+SELECT
+  d.week,
+  d.swap_count,
+  ROUND(d.vol_ankrflow, 2)                                              AS vol_ankrflow,
+  ROUND(d.dex_rate, 6)                                                  AS dex_rate,
+  ROUND(f.p_ankr / NULLIF(f.p_wflow, 0), 6)                            AS fair_value_rate,
+  ROUND((f.p_ankr / NULLIF(f.p_wflow, 0) - d.dex_rate)
+        / NULLIF(d.dex_rate, 0) * 10000, 1)                            AS spread_bps
+FROM dex d
+LEFT JOIN fv f ON f.week = d.week
+ORDER BY d.week DESC
 
 SELECT
   contract_address,
