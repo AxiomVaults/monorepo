@@ -17,3 +17,5 @@ ankrFLOW has traded at a persistent discount to its WFLOW redemption value on Pu
 ## The Opportunity
 
 Over 18 months of on-chain data, the ankrFLOW/WFLOW spread on PunchSwap averaged **243 basis points**.
+
+35% of all weeks exceeded 50 bps, and the peak spread reached **+695 bps**.
