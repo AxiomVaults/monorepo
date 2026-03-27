@@ -5,3 +5,5 @@
 ---
 
 ## The Problem
+
+Most FLOW holders earn nothing.
