@@ -133,6 +133,10 @@ From 18 months of on-chain data from Flow EVM:
 | Average discount during those windows | 243 bps |
 | Largest single window | +695 bps in late Nov 2025 — over 1.2M ankrFLOW available |
 
+The strategy is: buy ankrFLOW at the discount, earn staking yield while holding it, then redeem at par when the price recovers. Strong yield with no leverage and no liquidation risk.
+
+Beyond looping, there aren't many good sources of APY on Flow — this adds fundamental yield diversity that the ecosystem currently lacks.
+
 ## Plan
 
 A Flow-native vault that acts as a liquidity venue, capturing yield from discounted redeemable assets.
