@@ -60,3 +60,11 @@ Modelled net returns range from **~7% APY** (single deposit, no leverage) to **2
 10 contracts are deployed and verified on Flow EVM mainnet (chainId 747) as of 27 March 2026.
 
 The integration test suite passes 10/10 against live mainnet state — deposit, autoRebalance, rotateCapital, setAdapterApy, deallocateAll, and full withdrawal all verified.
+
+The keeper bot holds `OPERATOR_ROLE` on MultiStrategyManager and runs on an hourly cron.
+
+All contracts are open source, all code is auditable, and the vault is open to deposits now.
+
+---
+
+## Contracts
