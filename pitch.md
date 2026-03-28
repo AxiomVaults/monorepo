@@ -81,3 +81,5 @@ All contracts are open source, all code is auditable, and the vault is open to d
 | AxiomVenue | `0x507f4A207215baA279bCDaEE606b5D66e08d6f69` |
 | AxiomFactory | `0x81ed24669E20edb2DC282b909D898F78cfB7aE50` |
 | AxiomUniV2Pair | `0xD9C5414C5d854E5760Ba7da443104272834dA624` |
+
+Verify live on [FlowScan](https://evm.flowscan.io/address/0x2E6e627f8E5B019c85aC6f7A033D928741F65568).
