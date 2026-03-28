@@ -58,3 +58,5 @@ Modelled net returns range from **~7% APY** (single deposit, no leverage) to **2
 ## Live on Mainnet
 
 10 contracts are deployed and verified on Flow EVM mainnet (chainId 747) as of 27 March 2026.
+
+The integration test suite passes 10/10 against live mainnet state — deposit, autoRebalance, rotateCapital, setAdapterApy, deallocateAll, and full withdrawal all verified.
