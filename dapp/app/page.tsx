@@ -162,7 +162,7 @@ function InfoCard({
 }
 
 function YieldBreakdown() {
-  const sources = [
+  const additionalSources = [
     {
       name: 'ankrMORE Leveraged',
       desc: 'Stake WFLOW → ankrFLOW, supply to MORE Markets, borrow WFLOW again (60% LTV). Compounds the staking spread through a single loop.',
@@ -189,8 +189,32 @@ function YieldBreakdown() {
     <div className="p-[1.5px] rounded-2xl bg-gradient-to-br from-[#e81cff]/30 to-[#40c9ff]/30">
       <div className="bg-[#0f0f11] rounded-[14px] px-6 py-5">
         <p className="text-xs text-[#888] uppercase tracking-widest mb-5">Yield sources</p>
+
+        {/* ── Primary: aggregator venue ── */}
+        <div className="mb-6 p-[1px] rounded-xl bg-gradient-to-r from-[#e81cff]/50 to-[#40c9ff]/50">
+          <div className="bg-[#111114] rounded-[11px] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-1.5">
+                <p className="text-base font-bold text-white">Axiom Multi-Strategy Aggregator</p>
+                <span className="text-xs font-mono text-[#37FF8B] bg-[#37FF8B]/10 px-2 py-0.5 rounded-full">up to +12%</span>
+              </div>
+              <p className="text-xs text-[#666] leading-snug max-w-2xl">
+                The vault&apos;s <span className="text-[#aaa]">MultiStrategyManager</span> continuously monitors APY across all adapters and routes deposited WFLOW to whichever venue offers the highest risk-adjusted return. Yield accrues directly into the axWFLOW share price — no claiming, no compounding transactions required.
+              </p>
+            </div>
+            <div className="shrink-0 flex flex-col items-end gap-1">
+              <div className="h-1.5 w-48 rounded-full bg-[#1a1a1e]">
+                <div className="h-1.5 rounded-full bg-gradient-to-r from-[#e81cff] to-[#40c9ff] w-full" />
+              </div>
+              <p className="text-[10px] text-[#555] font-mono">auto-rotates · ERC-4626</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Secondary: individual adapters ── */}
+        <p className="text-[10px] text-[#555] uppercase tracking-widest mb-4">Additional yield sources</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {sources.map((s) => (
+          {additionalSources.map((s) => (
             <div key={s.name}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-semibold text-white">{s.name}</p>
@@ -198,7 +222,6 @@ function YieldBreakdown() {
                   <span className="text-xs font-mono text-[#37FF8B]">+{s.pct}%</span>
                 )}
               </div>
-              {/* Bar */}
               {s.pct > 0 && (
                 <div className="h-1 rounded-full bg-[#1a1a1e] mb-2">
                   <div
