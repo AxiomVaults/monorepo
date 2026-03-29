@@ -36,11 +36,11 @@ export default function Home() {
           </p>
 
           <div className="flex items-center justify-center gap-6 mt-6 text-sm">
-            <Stat label="Strategy" value="Multi-adapter meta-vault" />
+            <Stat label="Interface" value="UniV2 / Curve-compatible" />
+            <div className="w-px h-8 bg-[#1a1a1e]" />
+            <Stat label="Routed by" value="Eisen aggregator" />
             <div className="w-px h-8 bg-[#1a1a1e]" />
             <Stat label="Asset" value="WFLOW (ERC-4626)" />
-            <div className="w-px h-8 bg-[#1a1a1e]" />
-            <Stat label="Receipt" value="axWFLOW shares" />
           </div>
         </div>
 
@@ -66,11 +66,12 @@ export default function Home() {
             <InfoCard
               title="How it works"
               items={[
-                'Deposit WFLOW and receive axWFLOW shares',
-                'MultiStrategyManager routes capital to highest-APY adapter',
-                'Keeper bot updates APY hints; autoRebalance() optimises allocation',
-                'Yield accrues into share price — no claiming needed',
-                'Redeem shares anytime for WFLOW + accumulated yield',
+                'Vault implements UniV2 / Curve-compatible swap interface',
+                'Eisen automatically discovers it — no whitelisting needed',
+                'ankrFLOW ↔ WFLOW swap flow is routed through the vault',
+                'Vault buys ankrFLOW at discount, redeems at par → captures spread',
+                'Idle capital deployed to staking, lending & LP for a yield floor',
+                'All yield accrues into axWFLOW share price — no claiming needed',
               ]}
             />
             <InfoCard
