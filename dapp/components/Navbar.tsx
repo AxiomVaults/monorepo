@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useAccount, useDisconnect } from 'wagmi'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { shortAddress } from '@/lib/utils'
@@ -13,10 +14,15 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[#1a1a1e] bg-[#0a0a0a]/80 backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 flex h-16 items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-axiom-gradient flex items-center justify-center">
-            <span className="text-xs font-bold text-black">AX</span>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <Image
+            src="/logo_no_bg.png"
+            alt="Axiom Vault"
+            width={36}
+            height={36}
+            className="shrink-0"
+            priority
+          />
           <span className="text-white font-semibold tracking-tight text-lg">
             Axiom<span className="text-[#37FF8B]">Vault</span>
           </span>
