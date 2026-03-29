@@ -30,8 +30,9 @@ export default function Home() {
           </h1>
 
           <p className="text-[#888] max-w-lg mx-auto text-lg leading-relaxed">
-            Deposit WFLOW. Earn automated yield across ankrFLOW staking,
-            MORE lending, and PunchSwap LP — rotated to whichever is richest.
+            Deposit WFLOW. The vault acts as a UniV2-compatible swap venue on Eisen,
+            capturing spread on ankrFLOW ↔ WFLOW trades routed by the aggregator.
+            Idle capital earns additional yield through staking, lending, and LP.
           </p>
 
           <div className="flex items-center justify-center gap-6 mt-6 text-sm">
@@ -162,7 +163,7 @@ function InfoCard({
 }
 
 function YieldBreakdown() {
-  const additionalSources = [
+  const idleSources = [
     {
       name: 'ankrMORE Leveraged',
       desc: 'Stake WFLOW → ankrFLOW, supply to MORE Markets, borrow WFLOW again (60% LTV). Compounds the staking spread through a single loop.',
@@ -190,31 +191,35 @@ function YieldBreakdown() {
       <div className="bg-[#0f0f11] rounded-[14px] px-6 py-5">
         <p className="text-xs text-[#888] uppercase tracking-widest mb-5">Yield sources</p>
 
-        {/* ── Primary: aggregator venue ── */}
+        {/* ── Primary: Eisen aggregator venue ── */}
         <div className="mb-6 p-[1px] rounded-xl bg-gradient-to-r from-[#e81cff]/50 to-[#40c9ff]/50">
-          <div className="bg-[#111114] rounded-[11px] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-1.5">
-                <p className="text-base font-bold text-white">Axiom Multi-Strategy Aggregator</p>
-                <span className="text-xs font-mono text-[#37FF8B] bg-[#37FF8B]/10 px-2 py-0.5 rounded-full">up to +12%</span>
+          <div className="bg-[#111114] rounded-[11px] px-5 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-base font-bold text-white">Eisen Aggregator Swap Venue</p>
+                  <span className="text-[10px] font-mono text-[#37FF8B] bg-[#37FF8B]/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Primary</span>
+                </div>
+                <p className="text-[10px] text-[#555] font-mono">UniV2-compatible · auto-discovered · no whitelisting</p>
               </div>
-              <p className="text-xs text-[#666] leading-snug max-w-2xl">
-                The vault&apos;s <span className="text-[#aaa]">MultiStrategyManager</span> continuously monitors APY across all adapters and routes deposited WFLOW to whichever venue offers the highest risk-adjusted return. Yield accrues directly into the axWFLOW share price — no claiming, no compounding transactions required.
-              </p>
+              <span className="shrink-0 text-sm font-mono text-[#37FF8B]">spread on volume</span>
             </div>
-            <div className="shrink-0 flex flex-col items-end gap-1">
-              <div className="h-1.5 w-48 rounded-full bg-[#1a1a1e]">
-                <div className="h-1.5 rounded-full bg-gradient-to-r from-[#e81cff] to-[#40c9ff] w-full" />
-              </div>
-              <p className="text-[10px] text-[#555] font-mono">auto-rotates · ERC-4626</p>
-            </div>
+            <p className="text-xs text-[#666] leading-relaxed">
+              The vault implements a UniV2-compatible swap interface, so{' '}
+              <span className="text-[#aaa]">Eisen&apos;s router</span> (Flow EVM&apos;s leading aggregator)
+              automatically discovers it as a swap venue — no partnership required.
+              When traders swap ankrFLOW ↔ WFLOW, their trade routes through the vault.
+              The vault buys ankrFLOW at a slight discount, redeems it at par via the Ankr protocol, and
+              pockets the spread. Revenue scales with swap volume, not TVL.
+              Idle capital between swaps is deployed into the strategies below.
+            </p>
           </div>
         </div>
 
-        {/* ── Secondary: individual adapters ── */}
-        <p className="text-[10px] text-[#555] uppercase tracking-widest mb-4">Additional yield sources</p>
+        {/* ── Secondary: idle capital deployment ── */}
+        <p className="text-[10px] text-[#555] uppercase tracking-widest mb-4">Idle capital deployment</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {additionalSources.map((s) => (
+          {idleSources.map((s) => (
             <div key={s.name}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-semibold text-white">{s.name}</p>
