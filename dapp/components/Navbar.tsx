@@ -36,7 +36,7 @@ export default function Navbar() {
           <a href="/docs" className="hover:text-white transition-colors">
             Docs
           </a>
-          <a href="/roadmap-page" className="hover:text-white transition-colors">
+          <a href="/roadmap" className="hover:text-white transition-colors">
             Roadmap
           </a>
           <a

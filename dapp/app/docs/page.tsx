@@ -102,7 +102,7 @@ export default function DocsPage() {
             { name: 'AxiomVault',           addr: ADDRESSES.VAULT,     note: 'ERC-4626 vault — deposit / withdraw here' },
             { name: 'WFLOW',                addr: ADDRESSES.WFLOW,     note: 'Deposit asset / withdrawal asset' },
             { name: 'ankrFLOW',             addr: ADDRESSES.ANKR_FLOW, note: 'Yield-bearing LST; vault holds this during strategy' },
-            { name: 'PunchSwap pair',        addr: '0x7854498d4d1b2970fcb4e6960ddf782a68463a43', note: 'ankrFLOW/WFLOW DEX pair monitored for spread' },
+            { name: 'PunchSwap pair',        addr: '0x442aE0F33d66F617AF9106e797fc251B574aEdb3', note: 'ankrFLOW/WFLOW DEX pair monitored for spread' },
             { name: 'Ankr Staking',         addr: '0xfe8189a3016cb6a3668b8ccdac520ce572d4287a', note: 'Ankr native staking contract' },
           ]} />
         </Section>
