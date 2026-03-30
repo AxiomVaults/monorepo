@@ -58,34 +58,113 @@ export default function DocsPage() {
         {/* ─── Section 1: How it works ─────────────────────────────────────── */}
         <Section id="how-it-works" title="1. How it works">
           <p className="text-[#aaa] leading-relaxed mb-6">
-            Axiom Vault is a single-asset ERC-4626 vault. Users deposit WFLOW and
-            receive <Code>axWFLOW</Code> shares. Yield accrues{' '}
-            <em>into the share price</em> — no claiming, no compounding transactions.
-            Redeeming shares always returns WFLOW plus accumulated yield.
+            Axiom Vault is a single-asset ERC-4626 vault. Deposit WFLOW, receive{' '}
+            <Code>axWFLOW</Code> shares. Yield accrues into the share price — no
+            claiming, no compounding transactions. Redeem anytime for WFLOW plus
+            accumulated yield.
           </p>
 
-          <H3>Yield mechanism</H3>
+          <H3>Primary yield: Eisen aggregator routing</H3>
+          <p className="text-[#aaa] leading-relaxed mb-4">
+            On PunchSwap, ankrFLOW regularly trades at a deficit below its redemption
+            value. Sellers push the price below what the underlying is actually worth
+            via Ankr&apos;s protocol. We looked at 18 months of on-chain data and found a
+            spread above 50 bps in 35% of weeks, averaging 243 bps during those
+            windows. The yield source was sitting there untouched.
+          </p>
+          <p className="text-[#aaa] leading-relaxed mb-4">
+            The vault captures this by implementing a{' '}
+            <strong className="text-white">UniV2-compatible swap interface</strong> —
+            the same factory/pair standard that every DEX aggregator already knows how
+            to talk to.{' '}
+            <ExternalLink href="https://eisen.finance">Eisen</ExternalLink>, Flow
+            EVM&apos;s leading aggregator, scans for UniV2 factories to build its routing
+            graph. When it finds <Code>AxiomFactory</Code>, it reads the pair, reads
+            the reserves, and adds the vault as a venue — no partnership, no
+            whitelisting, no integration work required on either side.
+          </p>
           <p className="text-[#aaa] leading-relaxed mb-6">
-            The vault tracks ankrFLOW&apos;s fair value (staking rewards accrue on-chain,
-            so 1 ankrFLOW is always worth more than 1 FLOW). On PunchSwap the DEX price
-            of ankrFLOW/WFLOW periodically dips below fair value due to seller imbalance.
-            When the spread exceeds 50 bps, the vault&apos;s allocation bot buys ankrFLOW at
-            the discount and redeems it at par — capturing the difference as profit for
-            depositors.
+            From that point on, whenever a trader routes an ankrFLOW/WFLOW swap
+            through Eisen and our venue offers the best price, the trade lands in the
+            vault. The vault receives ankrFLOW at the discount, redeems it at par
+            through Ankr&apos;s staking protocol, and the profit lands in{' '}
+            <Code>totalAssets</Code> — which raises the axWFLOW share price for all
+            depositors. Revenue scales with swap volume routed through the vault, not
+            just TVL.
           </p>
 
+          <H3>How the Eisen routing works technically</H3>
+          <p className="text-[#aaa] leading-relaxed mb-3">
+            Eisen discovers the vault by calling{' '}
+            <Code>AxiomFactory.getPair(WFLOW, ankrFLOW)</Code>, which returns{' '}
+            <Code>AxiomUniV2Pair</Code>. The pair exposes:
+          </p>
+          <ul className="space-y-2 mb-6 ml-4">
+            {[
+              { fn: 'token0() / token1()', desc: 'Returns WFLOW and ankrFLOW — standard pair tokens.' },
+              { fn: 'getReserves()', desc: 'Returns virtual reserves computed from vault liquidity and the configured discount. The spot price Eisen reads reflects the 20 bps discount we offer on ankrFLOW. No real reserves are held in the pair contract.' },
+              { fn: 'swap(amount0Out, 0, to, data)', desc: 'The standard UniV2 swap call. Routes through AxiomVenue.swapRedeemableForBase(), which pulls WFLOW from the vault to pay the trader and forwards the received ankrFLOW to the redemption adapter.' },
+            ].map(({ fn, desc }) => (
+              <li key={fn} className="flex items-start gap-3 text-sm text-[#aaa]">
+                <span className="text-[#37FF8B] shrink-0 mt-0.5">›</span>
+                <span><Code>{fn}</Code> — {desc}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[#aaa] leading-relaxed mb-6">
+            The K invariant is not enforced — the vault is not an AMM. Virtual
+            reserves exist purely so aggregators can read a price. For large trades,
+            use <Code>AxiomVenue.swapExactTokensForTokens()</Code> directly for
+            exact pricing.
+          </p>
+
+          <H3>Secondary yield: idle capital adapters</H3>
+          <p className="text-[#aaa] leading-relaxed mb-4">
+            Between Eisen-routed swaps, capital sitting idle in the vault earns yield
+            through four on-chain adapters managed by{' '}
+            <Code>MultiStrategyManager</Code>. A keeper bot reads live APYs and calls{' '}
+            <Code>autoRebalance()</Code> to shift weight to whichever adapter is
+            paying most.
+          </p>
+          <div className="overflow-x-auto mb-6">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-[#1a1a1e]">
+                  <th className="text-left text-[#555] font-normal py-2 pr-4">Adapter</th>
+                  <th className="text-left text-[#555] font-normal py-2 pr-4">Strategy</th>
+                  <th className="text-left text-[#555] font-normal py-2">APY</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1a1a1e]">
+                {[
+                  { name: 'AnkrMOREYieldAdapter', strategy: 'Stake WFLOW -> ankrFLOW, supply to MORE Markets as collateral, borrow WFLOW at 60% LTV. Leveraged staking spread in a single loop.', apy: '~12%' },
+                  { name: 'AnkrYieldAdapter', strategy: 'Plain ankrFLOW liquid staking. No leverage. Exit via PunchSwap at any time.', apy: '~7%' },
+                  { name: 'MORELendingAdapter', strategy: 'Supply WFLOW directly to MORE Markets lending pool. No price risk, fully liquid.', apy: '~2-6%' },
+                  { name: 'PunchSwapLPAdapter', strategy: 'Provide ankrFLOW/WFLOW liquidity on PunchSwap V2. Earns swap fees from volume keeping the peg tight.', apy: '~4-11%' },
+                ].map((row) => (
+                  <tr key={row.name}>
+                    <td className="py-3 pr-4 font-mono text-xs text-[#37FF8B] align-top">{row.name}</td>
+                    <td className="py-3 pr-4 text-[#aaa] align-top">{row.strategy}</td>
+                    <td className="py-3 text-[#888] align-top whitespace-nowrap">{row.apy}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <H3>User flow</H3>
           <StepList steps={[
-            { n: '01', title: 'Deposit',    body: 'You call deposit(assets, receiver). The vault mints axWFLOW shares proportional to your WFLOW. Share price starts at 1:1 and rises as yield accrues.' },
-            { n: '02', title: 'Allocation', body: 'The keeper bot monitors the ankrFLOW/WFLOW DEX rate every block. When spread > 50 bps, it calls StrategyManager.allocate() to deploy idle WFLOW into ankrFLOW.' },
-            { n: '03', title: 'Yield',      body: 'While holding ankrFLOW, the vault earns native Ankr staking rewards (~7% APY). When the spread normalises, the bot redeems ankrFLOW back to WFLOW at a profit.' },
-            { n: '04', title: 'Withdraw',   body: 'You call redeem(shares, receiver, owner) at any time. The vault burns your axWFLOW, calculates the current WFLOW equivalent (shares × sharePrice), and transfers it to you.' },
+            { n: '01', title: 'Deposit',   body: 'Call deposit(assets, receiver). Vault mints axWFLOW shares proportional to your WFLOW. Share price starts at ~1:1 and rises as yield accrues.' },
+            { n: '02', title: 'Routing',   body: 'Eisen routes ankrFLOW/WFLOW swaps through the vault automatically. Each trade that lands here captures the spread between PunchSwap price and Ankr redemption value. Profit goes into totalAssets.' },
+            { n: '03', title: 'Idle yield', body: 'Capital not being used for active swaps is allocated across the four adapters. The keeper rebalances to the highest-yield adapter based on live APY reads.' },
+            { n: '04', title: 'Withdraw',  body: 'Call redeem(shares, receiver, owner) at any time. Vault burns axWFLOW, calculates WFLOW equivalent at current share price, and transfers to you. 10% reserve buffer ensures instant liquidity.' },
           ]} />
 
           <H3>Reserve buffer</H3>
           <p className="text-[#aaa] leading-relaxed">
-            10% of vault assets (configurable, max 50%) are kept as idle WFLOW at all
-            times. This ensures instant withdrawals without waiting for the staking
-            redemption queue.
+            10% of vault assets are kept as idle WFLOW at all times. This covers
+            withdrawals and incoming swap payments without waiting on staking redemption
+            queues.
           </p>
         </Section>
 
